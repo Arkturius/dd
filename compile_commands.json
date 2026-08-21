@@ -1,0 +1,17 @@
+[
+ {
+  "directory": "/home/rgramati/Documents/dd",
+  "arguments": [
+   "clang",
+   "-Iinclude",
+   "-Wall",
+   "-Wextra",
+   "-gdwarf-2",
+   "-o",
+   ".build/src/main.o",
+   "-c",
+   "src/main.c"
+  ],
+  "file": "src/main.c"
+ }
+]
