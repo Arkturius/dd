@@ -1,3 +1,3 @@
 # sources.mk
 
-SRCS	:=	main.c
+SRCS	:=	main.c utils.c
