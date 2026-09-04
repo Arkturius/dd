@@ -1,8 +1,9 @@
 [
  {
-  "directory": "/home/rgramati/Documents/dd",
+  "directory": "/home/rgramati/Documents/perso/dd",
   "arguments": [
    "clang",
+   "-std=gnu11",
    "-Iinclude",
    "-Wall",
    "-Wextra",
@@ -13,5 +14,21 @@
    "src/main.c"
   ],
   "file": "src/main.c"
+ },
+ {
+  "directory": "/home/rgramati/Documents/perso/dd",
+  "arguments": [
+   "clang",
+   "-std=gnu11",
+   "-Iinclude",
+   "-Wall",
+   "-Wextra",
+   "-gdwarf-2",
+   "-o",
+   ".build/src/utils.o",
+   "-c",
+   "src/utils.c"
+  ],
+  "file": "src/utils.c"
  }
 ]

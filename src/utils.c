@@ -24,14 +24,14 @@ hexdump_to_buffer(Buffer *out, const u8 *data, const u32 len)
 	HDBuff		hd   = {0};
 	HDBuff		tmp1 = {0};
 	bool		repeat = false;
-	u32 addr = 0;
-	u64	mask = 0;
+	u32			addr = 0;
+	u64			mask = 0;
 
 	for (; addr < len; addr += 16)
 	{
 		hd = *(HDBuff *)&data[addr];
 
-		if (hd.a == tmp1.a && hd.b == tmp1.b)
+		if (addr && hd.a == tmp1.a && hd.b == tmp1.b)
 		{
 			if (repeat)
 				continue ;
@@ -76,4 +76,35 @@ hexdump(const u8 *data, const u32 size)
 		hexdump_to_buffer(&out, data, size);
 		buf_print(&out);
 	}
+}
+
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/mman.h>
+
+bool
+file_read(Bytes *buf, const char *filename)
+{
+	struct stat	st = {0};
+
+	if (stat(filename, &st) == -1)
+		return false;
+
+	i32	fd = open(filename, O_RDONLY);
+	if (fd == -1)
+		return false;
+
+	void	*map = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+
+	close(fd);
+	if (map == MAP_FAILED)
+		return false;
+
+	buf->arr = malloc(st.st_size);
+	buf->len = st.st_size;
+	buf->cap = st.st_size;
+	memcpy(buf->arr, map, buf->len);
+	munmap(map, st.st_size);
+	
+	return true;
 }

@@ -6,8 +6,11 @@
 # define _BASICS_H
 
 # include <unistd.h>
+# include <stdbool.h>
 # include <stdio.h>
+# include <stdlib.h>
 # include <string.h>
+# include <stdint.h>
 
 /* Utilities **************************************************************** */
 
@@ -33,11 +36,20 @@
 #  endif
 #endif
 
+# if !defined (PACKED)
+#  if defined (__has_attribute) && __has_attribute(packed)
+#   define	PACKED	__attribute__((packed))
+#  else
+#   warning "attribute(packed) not supported."
+#  endif
+# endif
+
 # if !defined (TODO)
 #  define	TODO(fmt, ...)													\
 	do																		\
 	{																		\
-		dprintf(STDERR_FILENO, "%s:%d: TODO: " fmt, ##__VA_ARGS__);			\
+		dprintf(STDERR_FILENO, "%s:%d: TODO: " fmt "\n",					\
+			__FILE__, __LINE__, ##__VA_ARGS__);								\
 		abort();															\
 	} while (0)
 # endif
@@ -61,6 +73,19 @@
 	})
 # endif
 
+# if !defined (CONCAT)
+#  define	_CONCAT(a, b)	a ## b
+#  define	CONCAT(a, b)	_CONCAT(a, b)
+# endif
+
+# define	ENUM_GUARD(_type)			CONCAT(CONCAT(_, _type), _enum_max)
+# define	ENUM_LEN_CHECK(_type, _n)										\
+	static_assert															\
+	(																		\
+		ENUM_GUARD(_type) == _n,											\
+		"'enum " #_type "' member count has changed."						\
+	)
+
 /* Logging ****************************************************************** */
 
 # if defined (BASICS_LOG_STDERR)
@@ -80,7 +105,7 @@
 
 # define	LOG_HEAD(type, fmt, ...)										\
 																			\
-	LOG_THUNK(LOG_HEAD_ ## type ": " fmt, ##__VA_ARGS__);
+	LOG_THUNK(LOG_HEAD_ ## type ": " fmt, ##__VA_ARGS__)
 
 # define	LOG_RESET			"\033[0m"
 # define	LOG_HEAD_INFO		"\033[36;1mINFO"    LOG_RESET
@@ -92,9 +117,6 @@
 # define	ERROR(fmt, ...)		LOG_HEAD(ERROR,   fmt, ##__VA_ARGS__)
 
 /* Types ******************************************************************** */
-
-# include <stdint.h>
-# include <stdbool.h>
 
 typedef uint64_t	u64;
 typedef uint32_t	u32;
@@ -113,8 +135,6 @@ typedef uintptr_t	uptr;
 typedef intptr_t	iptr;
 
 /* Arrays ******************************************************************* */
-
-# include <stdlib.h>
 
 # define	BASICS_ARRAYS_BASE_CAP	256
 
@@ -305,7 +325,9 @@ array_type(char, Buffer);
 	(																		\
 		Buffer _b = {0};													\
 		array__isempty(&_b);												\
-		array_free(&_b), array_len(&_b)++									\
+		array_free(&_b), array_len(&_b) = 1									\
 	)
+
+array_type(u8, Bytes);
 
 #endif
