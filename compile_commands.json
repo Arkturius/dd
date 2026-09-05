@@ -1,13 +1,14 @@
 [
  {
-  "directory": "/home/rgramati/Documents/perso/dd",
+  "directory": "/home/rgramati/Documents/dd",
   "arguments": [
    "clang",
-   "-std=gnu11",
+   "-std=gnu2x",
    "-Iinclude",
    "-Wall",
    "-Wextra",
    "-gdwarf-2",
+   "-Wno-initializer-overrides",
    "-o",
    ".build/src/main.o",
    "-c",
@@ -16,14 +17,32 @@
   "file": "src/main.c"
  },
  {
-  "directory": "/home/rgramati/Documents/perso/dd",
+  "directory": "/home/rgramati/Documents/dd",
   "arguments": [
    "clang",
-   "-std=gnu11",
+   "-std=gnu2x",
    "-Iinclude",
    "-Wall",
    "-Wextra",
    "-gdwarf-2",
+   "-Wno-initializer-overrides",
+   "-o",
+   ".build/src/decoder.o",
+   "-c",
+   "src/decoder.c"
+  ],
+  "file": "src/decoder.c"
+ },
+ {
+  "directory": "/home/rgramati/Documents/dd",
+  "arguments": [
+   "clang",
+   "-std=gnu2x",
+   "-Iinclude",
+   "-Wall",
+   "-Wextra",
+   "-gdwarf-2",
+   "-Wno-initializer-overrides",
    "-o",
    ".build/src/utils.o",
    "-c",

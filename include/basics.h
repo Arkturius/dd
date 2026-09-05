@@ -78,11 +78,11 @@
 #  define	CONCAT(a, b)	_CONCAT(a, b)
 # endif
 
-# define	ENUM_GUARD(_type)			CONCAT(CONCAT(_, _type), _enum_max)
-# define	ENUM_LEN_CHECK(_type, _n)										\
+# define	ENUM_COUNT(_type)			CONCAT(CONCAT(_, _type), _count)
+# define	ENUM_CHECK(_type, _n)											\
 	static_assert															\
 	(																		\
-		ENUM_GUARD(_type) == _n,											\
+		ENUM_COUNT(_type) == _n,											\
 		"'enum " #_type "' member count has changed."						\
 	)
 

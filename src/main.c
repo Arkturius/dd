@@ -5,6 +5,7 @@
 #include <basics.h>
 #include <celf.h>
 #include <utils.h>
+#include <decoder.h>
 
 i32
 usage(const char *exe, i32 ret)
@@ -27,22 +28,6 @@ didier_elf_check(ELF_Ident *ident)
 	assert(ident->e_version    == EV_CURRENT);
 	assert(ident->e_ABI        == EABI_SYSV);
 	return true;
-}
-
-void
-didier_disass(Bytes *code)
-{
-	u32		pc = 0;
-
-	do
-	{
-		u8	byte = array_at(code, pc);
-
-		(void)byte;
-		INFO("Byte = 0x%02x", byte);
-		pc++;
-	}
-	while (pc < buf_len(code));
 }
 
 i32
@@ -82,7 +67,8 @@ main(i32 argc, char **argv)
 			break ;
 		}
 	}
-	didier_disass(&code);
+	
+	decode(&code);
 
 	return usage(exe, argc != 0);
 }
