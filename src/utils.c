@@ -62,7 +62,7 @@ hexdump_to_buffer(Buffer *out, const u8 *data, const u32 len)
 		for (u32 i = 0; i < 8; ++i)
 			mask = (mask << 8) | (isprint(data[addr + 15 - i]) ? 0xff : 0x00);
 		hd.b = ((hd.b ^ dots) & mask) ^ dots;
-		buf_appendf(out, "%.*s|\n", len - addr < 16 ? len - addr : 16, hd.buf);
+		buf_appendf(out, "%.*s|\n", 16, hd.buf);
 	}
 	if (addr != len)
 		buf_appendf(out, "%08x\n", len);

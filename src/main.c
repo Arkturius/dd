@@ -5,6 +5,7 @@
 #include <basics.h>
 #include <celf.h>
 #include <utils.h>
+#include <decoder.h>
 
 i32
 usage(const char *exe, i32 ret)
@@ -29,21 +30,7 @@ didier_elf_check(ELF_Ident *ident)
 	return true;
 }
 
-void
-didier_disass(Bytes *code)
-{
-	u32		pc = 0;
-
-	do
-	{
-		u8	byte = array_at(code, pc);
-
-		(void)byte;
-		INFO("Byte = 0x%02x", byte);
-		pc++;
-	}
-	while (pc < buf_len(code));
-}
+# if 1
 
 i32
 main(i32 argc, char **argv)
@@ -68,6 +55,15 @@ main(i32 argc, char **argv)
 		return 1;
 	}
 
+// GET the first section that looks like executable code, 
+// works fine with .o.
+// MUST be refactored into something that collect all interesting bytes
+//   .text,
+//   .data,
+//   .rodata,
+//   .plt,
+//   etc...
+
 	ELF64_Hdr	*file_header     = (ELF64_Hdr *)data;
 	ELF64_Shdr	*section_headers = (ELF64_Shdr *)(data + file_header->e_shoff);
 
@@ -77,12 +73,44 @@ main(i32 argc, char **argv)
 
 		if (section->sh_type == SHT_PROGBITS && (section->sh_flags & (SHF_EXECINSTR | SHF_ALLOC)))
 		{
-			INFO("Section [%u]: Type = 0x%08x", i, section->sh_type);
+			if (strcmp(".text", (char *)&data[section_headers[file_header->e_shstridx].sh_offset + section->sh_name]))
+				continue ;
 			code = array_slice(&content, section->sh_offset, section->sh_size);
 			break ;
 		}
 	}
-	didier_disass(&code);
+
+#if 0
+	const char	blob[] = "\x8b\x45\x00\x41\x8b\x45\x00";
+// 		"\x88\xD8"
+// 		"\x88\x18" 
+// 		"\x88\x1C\x20"
+// 		"\x88\x1C\x25\0\0\0\0" 
+// 		"\x88\x1D\0\0\0\x10" 
+// 		"\x88\x5C\x25\x10" 
+// 		"\x88\x9C\x48\x20\0\0\0"
+// 		"\x88\x59\x05" 
+// 		"\x88\x9A\0\x10\0\0"; 
+
+	array_empty(&code);
+	buf_appendn(&code, blob, sizeof(blob));
+	array_pop(&code);
+#endif
+
+	x86_Instructions	result = {0};
+
+	if (!decode(&result, code.arr, code.len))
+		return 1;
 
 	return usage(exe, argc != 0);
 }
+
+#else
+
+i32
+main(void)
+{
+	for (u32 i = 0; i < 4; ++i) __builtin_dump_struct(&opcode_meta_table[0x80].ops[i], printf);
+}
+
+#endif

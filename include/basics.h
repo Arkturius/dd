@@ -44,12 +44,18 @@
 #  endif
 # endif
 
+# if !defined (UNUSED)
+#   define	UNUSED(x)	(void)x;
+#  else
+#   define	UNUSED
+# endif
+
 # if !defined (TODO)
 #  define	TODO(fmt, ...)													\
 	do																		\
 	{																		\
-		dprintf(STDERR_FILENO, "%s:%d: TODO: " fmt "\n",					\
-			__FILE__, __LINE__, ##__VA_ARGS__);								\
+		dprintf(STDERR_FILENO, "%s:%d:%s: TODO: " fmt "\n",					\
+			__FILE__, __LINE__, __func__, ##__VA_ARGS__);					\
 		abort();															\
 	} while (0)
 # endif
@@ -60,6 +66,10 @@
 
 # if !defined (SHIFT)
 #  define	SHIFT(_ac, _av)	(--(_ac), *(_av)++)
+# endif
+
+# if !defined (ARRAY_SIZE)
+#  define	ARRAY_SIZE(_t)	(sizeof(_t) / sizeof(*_t))
 # endif
 
 # if !defined (SWAP)
@@ -78,13 +88,34 @@
 #  define	CONCAT(a, b)	_CONCAT(a, b)
 # endif
 
-# define	ENUM_GUARD(_type)			CONCAT(CONCAT(_, _type), _enum_max)
-# define	ENUM_LEN_CHECK(_type, _n)										\
+# define	enum_count(_type)			CONCAT(CONCAT(_, _type), _count)
+
+# define	enum_check(_type, _n)											\
 	static_assert															\
 	(																		\
-		ENUM_GUARD(_type) == _n,											\
+		enum_count(_type) == _n,											\
 		"'enum " #_type "' member count has changed."						\
 	)
+
+# define	enum_backtype(_type, _back)                                     \
+      static_assert                                                         \
+      (                                                                     \
+          (_back)-1 > (_back)0,                                             \
+          "'" #_back "' backing type must be unsigned"                      \
+      );																	\
+      static_assert                                                         \
+      (                                                                     \
+          (uintmax_t)(enum_count(_type) - 1) <= (uintmax_t)((_back)-1),     \
+          "'enum " #_type "' does not fit in <" #_back ">"                  \
+      )
+
+// # define	ENUM_DECL(_type, _back, _size, _args...)						\
+// 	typedef enum _type														\
+// 	{																		\
+// 		_args,																\
+// 		ENUM_COUNT(_type)													\
+// 	}																		\
+// 	_type; ENUM_CHECK(_type, _size); ENUM_BACKTYPE(_type, _back)
 
 /* Logging ****************************************************************** */
 
@@ -299,6 +330,15 @@ array_type(char, Buffer);
 # define	buf_append(_b, _s)												\
 	({																		\
 		const u32	_len = strlen(_s);										\
+																			\
+		array_reserve(_b, array_len(_b) + _len);							\
+		memcpy(array_end(_b), _s, _len);									\
+		array_len(_b) += _len;												\
+	})
+
+# define	buf_appendn(_b, _s, _n)											\
+	({																		\
+		const u32	_len = _n;												\
 																			\
 		array_reserve(_b, array_len(_b) + _len);							\
 		memcpy(array_end(_b), _s, _len);									\

@@ -23,8 +23,9 @@ typedef struct Bitset
 }
 Bitset;
 
+# define	BIT(_n)			(1ull << _n)
 # define	BIT_CHUNK(_bit)	((_bit) / BITSET_CHUNK_BITS)
-# define	BIT_MASK(_bit)	(1ull << ((_bit) % BITSET_CHUNK_BITS))
+# define	BIT_MASK(_bit)	BIT((_bit) % BITSET_CHUNK_BITS)
 # define	BIT_SET(_set)	((_set).bits)
 
 static_assert(sizeof(unsigned long) == 8, "unsigned long is not 64bit.");
@@ -44,5 +45,6 @@ static_assert(sizeof(unsigned long) == 8, "unsigned long is not 64bit.");
 		for (unsigned int _i = 0; _i < BITSET_SIZE; ++_i)	\
 			BIT_SET(_set)[_i] = 0ull;						\
 	} while (0)
+
 
 #endif // _BITSET_H

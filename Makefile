@@ -13,8 +13,8 @@ include sources.mk
 SRCS		:=	$(addprefix $(SRC_DIR)/, $(SRCS))
 OBJS		:=	$(addprefix $(OBJ_DIR)/, $(SRCS:%.c=%.o))
 
-CC			:=	clang -std=gnu2y
-CFLAGS		:=	-Wall -Wextra -gdwarf-2
+CC			:=	clang -std=gnu2x
+CFLAGS		:=	-Wall -Wextra -gdwarf-2 -Wno-initializer-overrides
 LDFLAGS		:=
 IFLAGS		:=	-I$(INC_DIR)
 
