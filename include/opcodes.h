@@ -79,7 +79,7 @@ enum_check(OpcodeMetaSplitPfx, 4);
 
 struct OpcodeMeta
 {
-	u8					kind;
+	OpcodeMetaKind		kind : 8;
 	u8					nops;
 	OpcodeOperand		ops[4];
 	OpcodeFlags			flags;
@@ -151,7 +151,7 @@ opcode_meta_root =
 		.kind     = META_OPCODE,											\
 		.mnemonic = MNEMO_JO + _n,											\
 		.nops     = 1,														\
-		.ops      = {[0] = { .method = METHOD_J, .type = OPTYPE_B }},		\
+		.ops      = {[0] = { .method = METHOD_I, .type = OPTYPE_B }},		\
 		.flags    = { .default_size = DFL_SIZE_F64 },						\
 	}
 
@@ -161,7 +161,7 @@ opcode_meta_root =
 		.kind     = META_OPCODE,											\
 		.mnemonic = MNEMO_JS + _n,											\
 		.nops     = 1,														\
-		.ops      = {[0] = { .method = METHOD_J, .type = OPTYPE_B }},		\
+		.ops      = {[0] = { .method = METHOD_I, .type = OPTYPE_B }},		\
 		.flags    = { .default_size = DFL_SIZE_F64 },						\
 	}
 
@@ -171,7 +171,7 @@ opcode_meta_root =
 		.kind     = META_OPCODE,											\
 		.mnemonic = MNEMO_JO + _n,											\
 		.nops     = 1,														\
-		.ops      = {[0] = { .method = METHOD_J, .type = OPTYPE_Z }},		\
+		.ops      = {[0] = { .method = METHOD_I, .type = OPTYPE_Z }},		\
 		.flags    = { .default_size = DFL_SIZE_F64 },						\
 	}
 
@@ -181,7 +181,7 @@ opcode_meta_root =
 		.kind     = META_OPCODE,											\
 		.mnemonic = MNEMO_JS + _n,											\
 		.nops     = 1,														\
-		.ops      = {[0] = { .method = METHOD_J, .type = OPTYPE_Z }},		\
+		.ops      = {[0] = { .method = METHOD_I, .type = OPTYPE_Z }},		\
 		.flags    = { .default_size = DFL_SIZE_F64 },						\
 	}
 
@@ -293,7 +293,8 @@ static const OpcodeSplitPfx opcode_meta_0f_fe;
 
 static const OpcodeSplitReg	opcode_meta_group1;
 static const OpcodeSplitReg	opcode_meta_group2;
-static const OpcodeSplitReg	opcode_meta_group3;
+static const OpcodeSplitReg	opcode_meta_group3_f6;
+static const OpcodeSplitReg	opcode_meta_group3_f7;
 static const OpcodeSplitReg	opcode_meta_group5;
 static const OpcodeSplitReg	opcode_meta_group11_c6;
 static const OpcodeSplitReg	opcode_meta_group11_c7;
@@ -304,19 +305,12 @@ opcode_meta_base =
 	[0x00 ... ARRAY_SIZE(opcode_meta_base) - 1] = {0},
 	
 	OPCODE_ALU(0x00, MNEMO_ADD),
-	
 	OPCODE_ALU(0x10, MNEMO_ADC),
-	
 	OPCODE_ALU(0x20, MNEMO_AND),
-	
 	OPCODE_ALU(0x30, MNEMO_XOR),
-
 	OPCODE_ALU(0x08, MNEMO_OR),
-	
 	OPCODE_ALU(0x18, MNEMO_SBB),
-	
 	OPCODE_ALU(0x28, MNEMO_SUB),
-	
 	OPCODE_ALU(0x38, MNEMO_CMP),
 
 	OPCODE_META_ROW(PUSH_GPR_64),
@@ -368,8 +362,8 @@ opcode_meta_base =
 	{
 		.kind  = META_SPLIT_REG,
 		.split = opcode_meta_group1,
-		.nops   = 2,
-		.ops      =
+		.nops  = 2,
+		.ops    =
 		{
 			[0] = { .method = METHOD_E, .type = OPTYPE_B },
 			[1] = { .method = METHOD_I, .type = OPTYPE_B },
@@ -388,6 +382,17 @@ opcode_meta_base =
 		},
 	},
 
+	[0x84] = 
+	{
+		.kind     = META_OPCODE,
+		.mnemonic = MNEMO_TEST,
+		.nops     = 2,
+		.ops      =
+		{
+			[0] = { .method = METHOD_E, .type = OPTYPE_B },
+			[1] = { .method = METHOD_G, .type = OPTYPE_B },
+		},
+	},
 	[0x85] = 
 	{
 		.kind     = META_OPCODE,
@@ -651,15 +656,27 @@ opcode_meta_base =
 	[0xf6] = 
 	{
 		.kind  = META_SPLIT_REG,
-		.split = opcode_meta_group3,
+		.split = opcode_meta_group3_f6,
+		.nops  = 1,
 		.ops   = {[0] = { .method = METHOD_E, .type = OPTYPE_B }},
-
 	},
 	[0xf7] = 
 	{
 		.kind  = META_SPLIT_REG,
-		.split = opcode_meta_group3,
+		.split = opcode_meta_group3_f7,
+		.nops  = 1,
 		.ops   = {[0] = { .method = METHOD_E, .type = OPTYPE_V }},
+	},
+
+	[0xfa] =
+	{
+		.kind     = META_OPCODE,
+		.mnemonic = MNEMO_CLI,
+	},
+	[0xfc] =
+	{
+		.kind     = META_OPCODE,
+		.mnemonic = MNEMO_CLD,
 	},
 
 	[0xff] = 
@@ -967,6 +984,11 @@ opcode_meta_group1 =
 static const OpcodeSplitReg
 opcode_meta_group2 =
 {
+	[0b000] =
+	{
+		.kind     = META_OPCODE,
+		.mnemonic = MNEMO_ROL,
+	},
 	[0b101] =
 	{
 		.kind     = META_OPCODE,
@@ -985,9 +1007,27 @@ opcode_meta_group2 =
 };
 
 static const OpcodeSplitReg
-opcode_meta_group3 =
+opcode_meta_group3_f6 =
 {
-	
+	[0b000] =
+	{
+		.kind     = META_OPCODE,
+		.mnemonic = MNEMO_TEST,
+		.nops     = 1,
+		.ops      = {[0] = { .method = METHOD_I, .type = OPTYPE_B }},
+	},
+};
+
+static const OpcodeSplitReg
+opcode_meta_group3_f7 =
+{
+	[0b000] =
+	{
+		.kind     = META_OPCODE,
+		.mnemonic = MNEMO_TEST,
+		.nops     = 1,
+		.ops      = {[0] = { .method = METHOD_I, .type = OPTYPE_Z }},
+	},
 };
 
 static const OpcodeSplitReg

@@ -2,6 +2,7 @@
  * decoder.c
  */
 
+#include "basics.h"
 #include <complex.h>
 #include <decoder.h>
 #include <stddef.h>
@@ -213,7 +214,7 @@ INTERN const OpcodeMeta
 			idx = dp->modrm.rm;
 			break ;
 		default:
-			return meta;
+			UNREACHABLE();
 	}
 	return &meta->split[idx];
 }
@@ -442,7 +443,7 @@ decoder_run(Decoder *dp, x86_Instructions *code)
 		if (!x86_mnemonics[dp->mnemonic])
 			TODO("Missing mnemonic display string - %d", dp->mnemonic);
 
-		INFO("< %s >", x86_mnemonics[dp->mnemonic]);
+ 		INFO("< %s >", x86_mnemonics[dp->mnemonic]);
 		INFO(" %zu / %zu bytes", dp->pc - dp->start, dp->end - dp->start);
 		hexdump(dp->opcode.raw, dp->opcode.len);
 

@@ -162,8 +162,12 @@ typedef enum x86_Mnemonic
 	MNEMO_XOR,
 	MNEMO_CMP,
 	MNEMO_TEST,
-	MNEMO_SHR,
+	MNEMO_ROL,
+	MNEMO_ROR,
+	MNEMO_RCL,
+	MNEMO_RCR,
 	MNEMO_SHL,
+	MNEMO_SHR,
 	MNEMO_SAR,
 	MNEMO_MOV,
 	MNEMO_MOVZX,
@@ -223,6 +227,8 @@ typedef enum x86_Mnemonic
 	MNEMO_CMOVG,
 	MNEMO_CALL,
 	MNEMO_HLT,
+	MNEMO_CLD,
+	MNEMO_CLI,
 	MNEMO_XABORT,
 	MNEMO_XBEGIN,
 	MNEMO_MOVS,
@@ -246,7 +252,7 @@ typedef enum x86_Mnemonic
 	enum_count(x86_Mnemonic),
 }
 x86_Mnemonic;
-enum_check(x86_Mnemonic, 94);
+enum_check(x86_Mnemonic, 100);
 
 static_assert(MNEMO_JO    + 1 == MNEMO_JNO);
 static_assert(MNEMO_JNO   + 1 == MNEMO_JB);
@@ -312,8 +318,12 @@ static const char
 	[MNEMO_XOR]       = "xor",
 	[MNEMO_CMP]       = "cmp",
 	[MNEMO_TEST]      = "test",
-	[MNEMO_SHR]       = "shr",
+	[MNEMO_ROL]       = "rol",
+	[MNEMO_ROR]       = "ror",
+	[MNEMO_RCL]       = "rcl",
+	[MNEMO_RCR]       = "rcr",
 	[MNEMO_SHL]       = "shl",
+	[MNEMO_SHR]       = "shr",
 	[MNEMO_SAR]       = "sar",
 	[MNEMO_MOV]       = "mov",
 	[MNEMO_MOVZX]     = "movzx",
@@ -373,6 +383,8 @@ static const char
 	[MNEMO_CMOVG]     = "cmovg",
 	[MNEMO_CALL]      = "call",
 	[MNEMO_HLT]       = "hlt",
+	[MNEMO_CLD]       = "cld",
+	[MNEMO_CLI]       = "cli",
 	[MNEMO_XABORT]    = "xabort",
 	[MNEMO_XBEGIN]    = "xbegin",
 	[MNEMO_MOVS]      = "movs",

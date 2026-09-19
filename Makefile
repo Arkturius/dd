@@ -15,7 +15,7 @@ OBJS		:=	$(addprefix $(OBJ_DIR)/, $(SRCS:%.c=%.o))
 
 CC			:=	clang -std=gnu2x
 
-CFLAGS		:=	-Wall -Wextra -gdwarf-2 -Wno-initializer-overrides
+CFLAGS		:=	-Wall -Wextra -gdwarf-2 -Wno-initializer-overrides -O3 -mavx2 -march=native
 CFLAGS		+=	-MMD -MP
 
 LDFLAGS		:=
