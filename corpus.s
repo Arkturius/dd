@@ -4,12 +4,16 @@ section .text
 global _start
 _start:
 
+	test	byte [rbp], 0x45
+
 operand_sizes:
 	mov		al, bl   ; 8-bit,  no REX
 	mov 	ax, bx   ; 16-bit, 0x66 prefix
 	mov 	eax, ebx ; 32-bit, default
 	mov 	rax, rbx ; 64-bit, REX.W
 	
+test_jump:
+
 extended_registers:
 	mov		r8b, r9b ; REX.RB
 	mov 	r8d, r9d ; REX.RB, 32-bit
@@ -89,20 +93,20 @@ disp_and_imm:
 	mov dword [rbx+0x10], 0x1234 ; disp8 + imm32
 	mov byte [rax], 0x7f         ; disp0 + imm8
 
-vex2_forms:                  ; C5, map is implicitly 0F
-	vaddps	xmm0, xmm1, xmm2   ; pp=none, L=0
-	vaddpd	xmm0, xmm1, xmm2   ; pp=66
-	vaddss	xmm0, xmm1, xmm2   ; pp=F3
-	vaddsd	xmm0, xmm1, xmm2   ; pp=F2
-	vaddps	ymm0, ymm1, ymm2   ; L=1 (256-bit)
-	vaddps	xmm8, xmm1, xmm2   ; VEX.R (dest r8+, still 2-byte)
-	vaddps	xmm0, xmm9, xmm2   ; high vvvv (xmm9)
-
-vex3_forms:                  ; C4, one per cause of the 3-byte form
-	vpshufb		xmm0, xmm1, xmm2    ; map 0F38
-	vpalignr	xmm0, xmm1, xmm2, 3 ; map 0F3A (+imm8)
-	vmovq		xmm0, rax           ; W=1 (map still 0F)
-	vaddps		xmm0, xmm1, [r8]    ; VEX.B (base r8)
+;vex2_forms:                  ; C5, map is implicitly 0F
+;	vaddps	xmm0, xmm1, xmm2   ; pp=none, L=0
+;	vaddpd	xmm0, xmm1, xmm2   ; pp=66
+;	vaddss	xmm0, xmm1, xmm2   ; pp=F3
+;	vaddsd	xmm0, xmm1, xmm2   ; pp=F2
+;	vaddps	ymm0, ymm1, ymm2   ; L=1 (256-bit)
+;	vaddps	xmm8, xmm1, xmm2   ; VEX.R (dest r8+, still 2-byte)
+;	vaddps	xmm0, xmm9, xmm2   ; high vvvv (xmm9)
+;
+;vex3_forms:                  ; C4, one per cause of the 3-byte form
+;	vpshufb		xmm0, xmm1, xmm2    ; map 0F38
+;	vpalignr	xmm0, xmm1, xmm2, 3 ; map 0F3A (+imm8)
+;	vmovq		xmm0, rax           ; W=1 (map still 0F)
+;	vaddps		xmm0, xmm1, [r8]    ; VEX.B (base r8)
 	
 	times 4096 nop
 
@@ -110,4 +114,3 @@ near_target:
 	ret
 	
 label64:
-	dq 0

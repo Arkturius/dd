@@ -14,7 +14,10 @@ SRCS		:=	$(addprefix $(SRC_DIR)/, $(SRCS))
 OBJS		:=	$(addprefix $(OBJ_DIR)/, $(SRCS:%.c=%.o))
 
 CC			:=	clang -std=gnu2x
+
 CFLAGS		:=	-Wall -Wextra -gdwarf-2 -Wno-initializer-overrides
+CFLAGS		+=	-MMD -MP
+
 LDFLAGS		:=
 IFLAGS		:=	-I$(INC_DIR)
 
@@ -50,6 +53,8 @@ fclean:				clean
 	@$(RM) $(NAME)
 
 re:					fclean all
+
+-include	$(OBJS:.o=.d)
 
 #
 # Strings

@@ -9,7 +9,7 @@
 # include <opcodes.h>
 # include <decode_types.h>
 
-# define DECODER_HAS_MODRM	BIT(1)
+# define DECODER_HAS_MODRM	BIT(0)
 
 typedef struct Decoder
 {
@@ -19,7 +19,6 @@ typedef struct Decoder
 	u8	reset[0];
 
 	DecodeOpcode		opcode;
-	u8					opbyte;
 	DecodePrefixState	prefix;
 	DecodeExtension		extension;
 	DecodeModRM			modrm;
@@ -30,6 +29,8 @@ typedef struct Decoder
 	u8				flags;
 	u8				nops;
 	OpcodeOperand	ops[4];
+
+	x86_Mnemonic	mnemonic;
 }
 Decoder;
 

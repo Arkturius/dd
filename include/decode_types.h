@@ -91,17 +91,15 @@ typedef union DecodeRex
 }
 DecodeRex;
 
-// TODO: VEX, EVEX
-
 typedef union DecodeVEX2
 {
 	struct
 	{
 		u8	id;
 		u8	p : 2;
-		u8	l : 1;
+		u8	L : 1;
 		u8	v : 4;
-		u8	r : 1;
+		u8	R : 1;
 	};
 	u8	raw[2];
 }
@@ -117,7 +115,7 @@ typedef union DecodeVEX3
 		u8	X : 1;
 		u8	R : 1;
 		u8	p : 2;
-		u8	l : 1;
+		u8	L : 1;
 		u8	v : 4;
 		u8	W : 1;
 	};
@@ -235,10 +233,11 @@ typedef enum DecodeAddressingMethod
 	METHOD_X,
 	METHOD_Y,
 	METHOD_OP,
+	METHOD_FX,
 	enum_count(DecodeAddressingMethod),
 }
 DecodeAddressingMethod;
-enum_check(DecodeAddressingMethod, 25);
+enum_check(DecodeAddressingMethod, 26);
 enum_backtype(DecodeAddressingMethod, u8);
 
 typedef enum DecodeOperandType
@@ -269,5 +268,28 @@ typedef enum DecodeOperandType
 DecodeOperandType;
 enum_check(DecodeOperandType, 21);
 enum_backtype(DecodeOperandType, u8);
+
+typedef enum DecodeOperandFixed
+{
+	FX_1,
+	FX_3,
+	FX_AL,
+	FX_AH,
+	FX_AX,
+	FX_CL,
+	FX_DX,
+	FX_FS,
+	FX_GS,
+	FX_SS,
+	FX_rAX,
+	FX_rDX,
+	FX_rCX,
+	FX_ST0,
+	FX_ST1,
+	enum_count(DecodeOperandFixed),
+}
+DecodeOperandFixed;
+enum_check(DecodeOperandFixed, 15);
+enum_backtype(DecodeOperandFixed, u8);
 
 #endif // _DECODE_TYPES_H

@@ -81,7 +81,7 @@ main(i32 argc, char **argv)
 	}
 
 #if 0
-	const char	blob[] = "\x8b\x45\x00\x41\x8b\x45\x00";
+	const char	blob[] = "\xf3\x0f\x1e\xfa";
 // 		"\x88\xD8"
 // 		"\x88\x18" 
 // 		"\x88\x1C\x20"
@@ -99,9 +99,9 @@ main(i32 argc, char **argv)
 
 	x86_Instructions	result = {0};
 
-	if (!decode(&result, code.arr, code.len))
-		return 1;
-
+ 	if (!decode(&result, code.arr, code.len))
+ 		return 1;
+ 
 	return usage(exe, argc != 0);
 }
 
@@ -110,7 +110,7 @@ main(i32 argc, char **argv)
 i32
 main(void)
 {
-	for (u32 i = 0; i < 4; ++i) __builtin_dump_struct(&opcode_meta_table[0x80].ops[i], printf);
+	INFO("size of Instruction = %zu", sizeof(x86_Instruction));
 }
 
 #endif
