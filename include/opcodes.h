@@ -1033,6 +1033,13 @@ opcode_meta_group3_f7 =
 static const OpcodeSplitReg
 opcode_meta_group5 =
 {
+	[0b001] =
+	{
+		.kind     = META_OPCODE,
+		.mnemonic = MNEMO_DEC,
+		.nops     = 1,
+		.ops      = {[0] = { .method = METHOD_E, .type = OPTYPE_V }},
+	},
 	[0b010] =
 	{
 		.kind     = META_OPCODE,

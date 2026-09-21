@@ -161,6 +161,8 @@ typedef enum x86_Mnemonic
 	MNEMO_SUB,
 	MNEMO_XOR,
 	MNEMO_CMP,
+	MNEMO_INC,
+	MNEMO_DEC,
 	MNEMO_TEST,
 	MNEMO_ROL,
 	MNEMO_ROR,
@@ -252,7 +254,7 @@ typedef enum x86_Mnemonic
 	enum_count(x86_Mnemonic),
 }
 x86_Mnemonic;
-enum_check(x86_Mnemonic, 100);
+enum_check(x86_Mnemonic, 102);
 
 static_assert(MNEMO_JO    + 1 == MNEMO_JNO);
 static_assert(MNEMO_JNO   + 1 == MNEMO_JB);
@@ -317,6 +319,8 @@ static const char
 	[MNEMO_SUB]       = "sub",
 	[MNEMO_XOR]       = "xor",
 	[MNEMO_CMP]       = "cmp",
+	[MNEMO_INC]       = "inc",
+	[MNEMO_DEC]       = "dec",
 	[MNEMO_TEST]      = "test",
 	[MNEMO_ROL]       = "rol",
 	[MNEMO_ROR]       = "ror",

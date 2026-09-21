@@ -444,8 +444,8 @@ decoder_run(Decoder *dp, x86_Instructions *code)
 			TODO("Missing mnemonic display string - %d", dp->mnemonic);
 
  		INFO("< %s >", x86_mnemonics[dp->mnemonic]);
-		INFO(" %zu / %zu bytes", dp->pc - dp->start, dp->end - dp->start);
-		hexdump(dp->opcode.raw, dp->opcode.len);
+// 		INFO(" %zu / %zu bytes", dp->pc - dp->start, dp->end - dp->start);
+// 		hexdump(dp->opcode.raw, dp->opcode.len);
 
 		decoder_materialize(dp, &ins);
 		decoder_clear(dp);
