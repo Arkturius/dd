@@ -20,13 +20,17 @@
 # define	VALIDITY_I64	1
 # define	VALIDITY_O64	2
 
+# define	PROMO_RAW		0
+# define	PROMO_ADDR		1
+# define	PROMO_OP		2
+
 typedef struct OpcodeFlags
 {
 	u8	default_size : 2;
 	u8	validity     : 2;
+	u8	promotable   : 2;
 	u8	lockable	 : 1;
 	u8	privileged   : 1;
-	u8	promotable   : 1;
 }
 OpcodeFlags;
 
@@ -391,6 +395,7 @@ opcode_meta_base =
 		},
 	},
 
+
 	[0x84] = 
 	{
 		.kind     = META_OPCODE,
@@ -438,6 +443,7 @@ opcode_meta_base =
 		},
 	},
 
+	
 	[0x8a] =
 	{
 		.kind     = META_OPCODE,

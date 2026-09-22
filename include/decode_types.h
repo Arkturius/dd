@@ -278,6 +278,8 @@ typedef enum DecodeOperandFixed
 	FX_AX,
 	FX_CL,
 	FX_DX,
+	FX_CS,
+	FX_DS,
 	FX_FS,
 	FX_GS,
 	FX_SS,
@@ -289,7 +291,7 @@ typedef enum DecodeOperandFixed
 	enum_count(DecodeOperandFixed),
 }
 DecodeOperandFixed;
-enum_check(DecodeOperandFixed, 15);
+enum_check(DecodeOperandFixed, 17);
 enum_backtype(DecodeOperandFixed, u8);
 
 #endif // _DECODE_TYPES_H
