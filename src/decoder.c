@@ -444,8 +444,8 @@ decoder_run(Decoder *dp, x86_Instructions *code)
 			TODO("Missing mnemonic display string - %d", dp->mnemonic);
 
  		INFO("< %s >", x86_mnemonics[dp->mnemonic]);
-// 		INFO(" %zu / %zu bytes", dp->pc - dp->start, dp->end - dp->start);
-// 		hexdump(dp->opcode.raw, dp->opcode.len);
+		INFO(" %zu / %zu bytes", dp->pc - dp->start, dp->end - dp->start);
+		hexdump(dp->opcode.raw, dp->opcode.len);
 
 		decoder_materialize(dp, &ins);
 		decoder_clear(dp);
@@ -463,8 +463,6 @@ decode(x86_Instructions *code, u8 *stream, u32 len)
 
 	Decoder	decoder = {0};
 
-	INFO("group1 at %p", opcode_meta_group1);
-	INFO("  next at %p", opcode_meta_group11_c7_111_11);
 	decoder_new(&decoder, stream, len);
 	if (!decoder_run(&decoder, code))
 	{

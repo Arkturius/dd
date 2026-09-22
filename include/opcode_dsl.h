@@ -150,6 +150,7 @@ CONST OpcodeTable	meta_base =
 	Opcode(0x5f, Mnemonic(POP),   Operands(OPv), Flags(D64)),
 
 	Opcode(0x63, Mnemonic(MOVSXD), Operands(Gv, Ev), Flags(O64)),
+	Opcode(0x68, Mnemonic(PUSH),   Operands(Iz),     Flags(D64)),
 
 	Opcode(0x70, Mnemonic(JO),    Operands(Eb, Ib)),
 	Opcode(0x71, Mnemonic(JNO),   Operands(Eb, Ib)),

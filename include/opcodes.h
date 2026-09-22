@@ -333,6 +333,15 @@ opcode_meta_base =
 		},
 	},
 
+	[0x68] =
+	{
+		.kind     = META_OPCODE,
+		.mnemonic = MNEMO_PUSH,
+		.nops     = 1,
+		.ops      = {[0] = { .method = METHOD_I, .type = OPTYPE_Z }},
+		.flags    = { .default_size = DFL_SIZE_D64 },
+	},
+
 	OPCODE_META_ROW(JCC_IB_70_77),
 	OPCODE_META_ROW(JCC_IB_78_7F),
 
@@ -1033,6 +1042,13 @@ opcode_meta_group3_f7 =
 static const OpcodeSplitReg
 opcode_meta_group5 =
 {
+	[0b000] =
+	{
+		.kind     = META_OPCODE,
+		.mnemonic = MNEMO_INC,
+		.nops     = 1,
+		.ops      = {[0] = { .method = METHOD_E, .type = OPTYPE_V }},
+	},
 	[0b001] =
 	{
 		.kind     = META_OPCODE,
@@ -1055,6 +1071,14 @@ opcode_meta_group5 =
 		.nops     = 1,
 		.ops      = {[0] = { .method = METHOD_E, .type = OPTYPE_V }},
 		.flags    = { .default_size = DFL_SIZE_F64 },
+	},
+	[0b110] =
+	{
+		.kind     = META_OPCODE,
+		.mnemonic = MNEMO_PUSH,
+		.nops     = 1,
+		.ops      = {[0] = { .method = METHOD_E, .type = OPTYPE_V }},
+		.flags    = { .default_size = DFL_SIZE_D64 },
 	},
 };
 

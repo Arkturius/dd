@@ -30,6 +30,8 @@ didier_elf_check(ELF_Ident *ident)
 	return true;
 }
 
+array_type(Bytes, SectionList);
+
 # if 1
 
 i32
@@ -66,42 +68,29 @@ main(i32 argc, char **argv)
 
 	ELF64_Hdr	*file_header     = (ELF64_Hdr *)data;
 	ELF64_Shdr	*section_headers = (ELF64_Shdr *)(data + file_header->e_shoff);
+	SectionList	section_list     = {0};
 
 	for (u32 i = 0; i < file_header->e_shnum; ++i)
 	{
 		ELF64_Shdr	*section = &section_headers[i];
 
-		if (section->sh_type == SHT_PROGBITS && (section->sh_flags & (SHF_EXECINSTR | SHF_ALLOC)))
+		bool	ax    = (section->sh_flags & SHF_EXECINSTR) && (section->sh_flags & SHF_ALLOC);
+
+		if (section->sh_type == SHT_PROGBITS && ax)
 		{
-			if (strcmp(".text", (char *)&data[section_headers[file_header->e_shstridx].sh_offset + section->sh_name]))
-				continue ;
 			code = array_slice(&content, section->sh_offset, section->sh_size);
-			break ;
+			array_push(&section_list, code);
 		}
 	}
 
-#if 0
-	const char	blob[] = "\xf3\x0f\x1e\xfa";
-// 		"\x88\xD8"
-// 		"\x88\x18" 
-// 		"\x88\x1C\x20"
-// 		"\x88\x1C\x25\0\0\0\0" 
-// 		"\x88\x1D\0\0\0\x10" 
-// 		"\x88\x5C\x25\x10" 
-// 		"\x88\x9C\x48\x20\0\0\0"
-// 		"\x88\x59\x05" 
-// 		"\x88\x9A\0\x10\0\0"; 
+	array_foreach(section, &section_list)
+	{
+		x86_Instructions	result = {0};
 
-	array_empty(&code);
-	buf_appendn(&code, blob, sizeof(blob));
-	array_pop(&code);
-#endif
-
-	x86_Instructions	result = {0};
-
- 	if (!decode(&result, code.arr, code.len))
- 		return 1;
- 
+		INFO("SECTION DISASS --------------------");
+		if (!decode(&result, section->arr, array_len(section)))
+			return 1;
+	}
 	return usage(exe, argc != 0);
 }
 

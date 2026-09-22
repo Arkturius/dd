@@ -147,6 +147,8 @@
 # define	WARNING(fmt, ...)	LOG_HEAD(WARNING, fmt, ##__VA_ARGS__)
 # define	ERROR(fmt, ...)		LOG_HEAD(ERROR,   fmt, ##__VA_ARGS__)
 
+# define	BOOL2STR(_b)		(_b ? "True" : "False")
+
 /* Types ******************************************************************** */
 
 typedef uint64_t	u64;
