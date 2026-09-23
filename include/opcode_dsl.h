@@ -24,9 +24,6 @@
 # define	META_SPLIT(_kind, _name, _args...)	\
 	META(SPLIT_ ## _kind, .split = _name, _args)
 
-# define	TABLE(_name, _args...)			
-# define	SPLIT(_name, _kind, _args...)	
-
 # define	NOPS(_ops...)		sizeof((OpcodeOperand[]){ _ops }) / sizeof(OpcodeOperand)
 # define	OP(_am, _ot)		{ .method = METHOD_ ## _am, .type  = OPTYPE_ ## _ot }
 # define	FX(_fx)				{ .method = METHOD_FX,      .fixed = FX_ ## _fx }
@@ -53,7 +50,29 @@
 # define	Table(_byte, _name, _args...)\
 	[_byte] = META_TABLE(_name, _args)
 
-# define	Ap	OP(A,  P)
+# define	SplitMod(_byte, _name, _args...)\
+	Split(_byte, MOD, (OpcodeSplitMod) _name, _args)
+
+# define	SplitModP(_byte, _name, _args...)\
+	Split(_byte, MOD, (OpcodeMeta *) _name, _args)
+
+# define	SplitPfx(_byte, _name, _args...)\
+	Split(_byte, PFX, (OpcodeSplitPfx) _name, _args)
+
+# define	SplitPfxP(_byte, _name, _args...)\
+	Split(_byte, PFX, (OpcodeMeta *) _name, _args)
+
+# define	SplitReg(_byte, _name, _args...)\
+	Split(_byte, REG, (OpcodeSplitReg) _name, _args)
+
+# define	SplitRegP(_byte, _name, _args...)\
+	Split(_byte, REG, (OpcodeMeta *)_name, _args)
+
+# define	SplitRm(_byte, _name, _args...)\
+	Split(_byte, RM, (OpcodeSplitRm) _name, _args)
+
+# define	SplitRmP(_byte, _name, _args...)\
+	Split(_byte, RM, (OpcodeMeta *)_name, _args)
 
 # define	Eb	OP(E,  B)
 # define	Gb	OP(G,  B)
@@ -62,6 +81,10 @@
 # define	Xb	OP(X,  B)
 # define	Yb	OP(Y,  B)
 # define	OPb	OP(OP, B)
+
+# define	Ap	OP(A,  P)
+# define	Ep	OP(E,  P)
+# define	Mp	OP(M,  P)
 
 # define	Pq	OP(P,  Q)
 # define	Qq	OP(Q,  Q)
@@ -119,12 +142,7 @@ CONST OpcodeTable		meta_base_0f_38;
 CONST OpcodeTable		meta_base_0f_3a;
 
 CONST OpcodeSplitReg	meta_group1;
-// CONST OpcodeSplitReg	meta_group1a;
 CONST OpcodeSplitReg	meta_group2;
-// CONST OpcodeSplitReg	meta_group3_f6;
-// CONST OpcodeSplitReg	meta_group3_f7;
-// CONST OpcodeSplitReg	meta_group4;
-// CONST OpcodeSplitReg	meta_group5;
 // CONST OpcodeSplitReg	meta_group6;
 // CONST OpcodeSplitReg	meta_group7;
 // CONST OpcodeSplitReg	meta_group8;
@@ -241,10 +259,10 @@ meta_base =
 	Opcode(0x7e, M(JLE), O(Eb, Ib)),
 	Opcode(0x7f, M(JG),  O(Eb, Ib)),
 
-	Split(0x80, REG, meta_group1, O(Eb, Ib)),
-	Split(0x81, REG, meta_group1, O(Ev, Iz)),
-	Split(0x82, REG, meta_group1, O(Eb, Ib), F(I64)),
-	Split(0x83, REG, meta_group1, O(Ev, Ib)),
+	SplitRegP(0x80, meta_group1, O(Eb, Ib)),
+	SplitRegP(0x81, meta_group1, O(Ev, Iz)),
+	SplitRegP(0x82, meta_group1, O(Eb, Ib), F(I64)),
+	SplitRegP(0x83, meta_group1, O(Ev, Ib)),
 
 	Opcode(0x84, M(TEST), O(Eb, Gb)),
 	Opcode(0x85, M(TEST), O(Ev, Gv)),
@@ -255,6 +273,11 @@ meta_base =
 	Opcode(0x8b, M(MOV), O(Gv, Ev)),
 
 	Opcode(0x8d, M(LEA), O(Gv, Mv)),
+
+	SplitReg(0x8f, 
+	{
+		Opcode(0b000, M(POP), F(D64)),
+	}),
 
 	Opcode(0x90, M(NOP)),
 
@@ -283,39 +306,39 @@ meta_base =
 	Opcode(0xbe, M(MOV), O(OPv, Iv)),
 	Opcode(0xbf, M(MOV), O(OPv, Iv)),
 
-	Split(0xc0, REG, meta_group2, O(Eb, Ib)),
-	Split(0xc1, REG, meta_group2, O(Ev, Ib)),
+	SplitRegP(0xc0, meta_group2, O(Eb, Ib)),
+	SplitRegP(0xc1, meta_group2, O(Ev, Ib)),
 
 	Opcode(0xc2, M(RET), O(Iw), F(D64)),
 	Opcode(0xc3, M(RET), F(D64)),
 
-	Split(0xc6, REG, (OpcodeSplitReg)
+	SplitReg(0xc6,
 	{
 		Opcode(0b000, M(MOV), O(Eb, Ib)),
-		Split(0b111, MOD, (OpcodeSplitMod)
+		SplitMod(0b111,
 		{
-			Split(SPLIT_MOD_REG, RM, (OpcodeSplitRm)
+			SplitRm(SPLIT_MOD_REG,
 			{
 				Opcode(0b000, M(XABORT), O(Ib)),
 			}),
 		}),
 	}),
-	Split(0xc7, REG, (OpcodeSplitReg)
+	SplitReg(0xc7,
 	{
-		Opcode(0b000, M(MOV), O(Ev, Iz)),
-		Split(0b111, MOD, (OpcodeSplitMod)
+		Opcode(0b000, M(MOV), O(Eb, Ib)),
+		SplitMod(0b111,
 		{
-			Split(SPLIT_MOD_REG, RM, (OpcodeSplitRm)
+			SplitRm(SPLIT_MOD_REG,
 			{
 				Opcode(0b000, M(XBEGIN), O(Jz)),
 			}),
 		}),
 	}),
 
-	Split(0xd1, REG, meta_group2, O(Eb, ONE)),
-	Split(0xd2, REG, meta_group2, O(Ev, ONE)),
-	Split(0xd3, REG, meta_group2, O(Eb, CL)),
-	Split(0xd4, REG, meta_group2, O(Ev, CL)),
+	SplitRegP(0xd1, meta_group2, O(Eb, ONE)),
+	SplitRegP(0xd2, meta_group2, O(Ev, ONE)),
+	SplitRegP(0xd3, meta_group2, O(Eb, CL)),
+	SplitRegP(0xd4, meta_group2, O(Ev, CL)),
 
 	Opcode(0xe8, M(CALL), O(Jz), F(F64)),
 	Opcode(0xe9, M(JMP),  O(Jz), F(F64)),
@@ -324,8 +347,29 @@ meta_base =
 
 	Opcode(0xf4, M(HLT)),
 
-	Split(0xf6, REG, meta_group3_f6, O(Eb)),
-	Split(0xf7, REG, meta_group3_f7, O(Ev)),
+	SplitReg(0xf6, 
+	{
+		Opcode(0b000, M(TEST), O(Ib)),
+		Opcode(0b001, M(TEST), O(Ib)), // should not be here
+		Opcode(0b010, M(NOT)),
+		Opcode(0b011, M(NEG)),
+		Opcode(0b100, M(MUL),  O(AL)),
+		Opcode(0b101, M(IMUL), O(AL)),
+		Opcode(0b110, M(DIV),  O(AL)),
+		Opcode(0b111, M(IDIV), O(AL)),
+	}, O(Eb)),
+
+	SplitReg(0xf7, 
+	{
+		Opcode(0b000, M(TEST), O(Iz)),
+		Opcode(0b001, M(TEST), O(Iz)), // should not be here
+		Opcode(0b010, M(NOT)),
+		Opcode(0b011, M(NEG)),
+		Opcode(0b100, M(MUL),  O(RA)),
+		Opcode(0b101, M(IMUL), O(RA)),
+		Opcode(0b110, M(DIV),  O(RA)),
+		Opcode(0b111, M(IDIV), O(RA)),
+	}, O(Ev)),
 
 	Opcode(0xf8, M(CLC)),
 	Opcode(0xf9, M(STC)),
@@ -334,8 +378,21 @@ meta_base =
 	Opcode(0xfc, M(CLD)),
 	Opcode(0xfd, M(STD)),
 
-	Split(0xfe, REG, meta_group4),
-	Split(0xff, REG, meta_group5),
+	SplitReg(0xfe,
+	{
+		Opcode(0b000, M(INC), O(Eb)),
+		Opcode(0b001, M(DEC), O(Eb)),
+	}),
+ 	SplitReg(0xff,
+	{
+		Opcode(0b000, M(INC),  O(Ev)),
+		Opcode(0b001, M(DEC),  O(Ev)),
+		Opcode(0b010, M(CALL), O(Ev), F(F64)),
+		Opcode(0b011, M(CALL), O(Ep)),
+		Opcode(0b100, M(JMP),  O(Ev), F(F64)),
+		Opcode(0b101, M(JMP),  O(Mp)),
+		Opcode(0b110, M(PUSH), O(Ev), F(D64)),
+	}),
 };
 
 CONST OpcodeSplitPfx	meta_base_0f_1e;
@@ -345,13 +402,13 @@ CONST OpcodeSplitPfx	meta_base_0f_58;
 CONST OpcodeTable
 meta_base_0f =
 {
-	Split(0x1e, PFX, (OpcodeSplitPfx)
+	SplitPfx(0x1e,
 	{
-		Split(SPLIT_PFX_F3, MOD, (OpcodeSplitMod)
+		SplitMod(SPLIT_PFX_F3,
 		{
-			Split(SPLIT_MOD_REG, REG, (OpcodeSplitReg)
+			SplitReg(SPLIT_MOD_REG,
 			{
-				Split(0b111, RM, (OpcodeSplitRm)
+				SplitRm(0b111,
 				{
 					Opcode(0b010, M(ENDBR64)),
 					Opcode(0b011, M(ENDBR32)),
@@ -359,7 +416,7 @@ meta_base_0f =
 			}),
 		}),
 	}),
-	Split(0x1f, REG, (OpcodeSplitReg)
+	SplitReg(0x1f,
 	{
 		Opcode(0b000, M(NOP), O(Ev)),
 	}),
@@ -384,12 +441,12 @@ meta_base_0f =
 	Opcode(0x4e, M(CMOVLE), O(Gv, Ev)),
 	Opcode(0x4f, M(CMOVG),  O(Gv, Ev)),
 
-	Split(0x58, PFX, (OpcodeSplitPfx)
+	SplitPfx(0x58,
 	{
 		Opcode(SPLIT_PFX_NONE, M(ADDPS), O(Vps, Wps)),
-		Opcode(SPLIT_PFX_NONE, M(ADDPD), O(Vpd, Wpd)),
-		Opcode(SPLIT_PFX_NONE, M(ADDSS), O(Vss, Wss)),
-		Opcode(SPLIT_PFX_NONE, M(ADDSD), O(Vsd, Wsd)),
+		Opcode(SPLIT_PFX_66,   M(ADDPD), O(Vpd, Wpd)),
+		Opcode(SPLIT_PFX_F3,   M(ADDSS), O(Vss, Wss)),
+		Opcode(SPLIT_PFX_F2,   M(ADDSD), O(Vsd, Wsd)),
 	}),
 
 	Opcode(0x80, M(JO),  O(Iz)),
@@ -436,18 +493,18 @@ CONST OpcodeSplitPfx	meta_base_0f_38_0x;
 CONST OpcodeTable
 meta_base_0f_38 =
 {
-	Split(0x00, PFX, meta_base_0f_38_0x, M(PSHUFB)),
-	Split(0x01, PFX, meta_base_0f_38_0x, M(PHADDW)),
-	Split(0x02, PFX, meta_base_0f_38_0x, M(PHADDD)),
-	Split(0x03, PFX, meta_base_0f_38_0x, M(PHADDSW)),
-	Split(0x04, PFX, meta_base_0f_38_0x, M(PMADDUBSW)),
-	Split(0x05, PFX, meta_base_0f_38_0x, M(PHSUBW)),
-	Split(0x06, PFX, meta_base_0f_38_0x, M(PHSUBD)),
-	Split(0x07, PFX, meta_base_0f_38_0x, M(PHSUBSW)),
-	Split(0x08, PFX, meta_base_0f_38_0x, M(PSIGNB)),
-	Split(0x09, PFX, meta_base_0f_38_0x, M(PSIGNW)),
-	Split(0x0a, PFX, meta_base_0f_38_0x, M(PSIGND)),
-	Split(0x0b, PFX, meta_base_0f_38_0x, M(PMULHRSW)),
+	SplitPfxP(0x00, meta_base_0f_38_0x, M(PSHUFB)),
+	SplitPfxP(0x01, meta_base_0f_38_0x, M(PHADDW)),
+	SplitPfxP(0x02, meta_base_0f_38_0x, M(PHADDD)),
+	SplitPfxP(0x03, meta_base_0f_38_0x, M(PHADDSW)),
+	SplitPfxP(0x04, meta_base_0f_38_0x, M(PMADDUBSW)),
+	SplitPfxP(0x05, meta_base_0f_38_0x, M(PHSUBW)),
+	SplitPfxP(0x06, meta_base_0f_38_0x, M(PHSUBD)),
+	SplitPfxP(0x07, meta_base_0f_38_0x, M(PHSUBSW)),
+	SplitPfxP(0x08, meta_base_0f_38_0x, M(PSIGNB)),
+	SplitPfxP(0x09, meta_base_0f_38_0x, M(PSIGNW)),
+	SplitPfxP(0x0a, meta_base_0f_38_0x, M(PSIGND)),
+	SplitPfxP(0x0b, meta_base_0f_38_0x, M(PMULHRSW)),
 };
 
 // 3 BYTES OPCODES (0F 3A XX)
@@ -489,7 +546,5 @@ meta_group2 =
 	
 	Opcode(0b111, M(SAR)),
 };
-
-
 
 #endif

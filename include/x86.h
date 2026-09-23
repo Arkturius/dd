@@ -171,6 +171,12 @@ typedef enum x86_Mnemonic
 	MNEMO_SHL,
 	MNEMO_SHR,
 	MNEMO_SAR,
+	MNEMO_NOT,
+	MNEMO_NEG,
+	MNEMO_MUL,
+	MNEMO_IMUL,
+	MNEMO_DIV,
+	MNEMO_IDIV,
 	MNEMO_MOV,
 	MNEMO_MOVZX,
 	MNEMO_MOVSX,
@@ -262,7 +268,7 @@ typedef enum x86_Mnemonic
 	enum_count(x86_Mnemonic),
 }
 x86_Mnemonic;
-enum_check(x86_Mnemonic, 110);
+enum_check(x86_Mnemonic, 116);
 
 static_assert(MNEMO_JO    + 1 == MNEMO_JNO);
 static_assert(MNEMO_JNO   + 1 == MNEMO_JB);
