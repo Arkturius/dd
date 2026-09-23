@@ -185,6 +185,12 @@ typedef enum x86_Mnemonic
 	MNEMO_PUSH,
 	MNEMO_POP,
 	MNEMO_JMP,
+	MNEMO_JCXZ,
+	MNEMO_JECXZ,
+	MNEMO_JRCXZ,
+	MNEMO_LOOPNE,
+	MNEMO_LOOPE,
+	MNEMO_LOOP,
 	MNEMO_CMOVO,
 	MNEMO_CMOVNO,
 	MNEMO_CMOVB,
@@ -233,22 +239,32 @@ typedef enum x86_Mnemonic
 	MNEMO_SETGE,
 	MNEMO_SETLE,
 	MNEMO_SETG,
+	MNEMO_ENTER,
+	MNEMO_LEAVE,
 	MNEMO_CALL,
+	MNEMO_RET,
 	MNEMO_HLT,
+	MNEMO_BT,
 	MNEMO_CLC,
 	MNEMO_STC,
 	MNEMO_CLI,
 	MNEMO_STI,
 	MNEMO_CLD,
 	MNEMO_STD,
+	MNEMO_LODSB,
+	MNEMO_LODSW,
+	MNEMO_LODSD,
+	MNEMO_LODSQ,
 	MNEMO_XABORT,
 	MNEMO_XBEGIN,
 	MNEMO_MOVS,
 	MNEMO_CWD,
 	MNEMO_CDQ,
 	MNEMO_CQO,
-	MNEMO_RET,
-	MNEMO_PADDD,
+	
+	MNEMO_BSF,
+	MNEMO_TZCNT,
+
 	MNEMO_PSHUFB,
 	MNEMO_PHADDW,
 	MNEMO_PHADDD,
@@ -261,62 +277,54 @@ typedef enum x86_Mnemonic
 	MNEMO_PSIGNW,
 	MNEMO_PSIGND,
 	MNEMO_PMULHRSW,
+
+	MNEMO_MOVAPS,
+	MNEMO_MOVAPD,
+
+	MNEMO_MOVUPS,
+	MNEMO_MOVUPD,
+	MNEMO_MOVSS,
+	MNEMO_MOVSD,
+
+	MNEMO_XORPS,
+	MNEMO_XORPD,
+
+	MNEMO_PSUBB,
+	MNEMO_PSUBW,
+	MNEMO_PSUBD,
+	MNEMO_PSUBQ,
+	MNEMO_PADDB,
+	MNEMO_PADDW,
+	MNEMO_PADDD,
+	
 	MNEMO_ADDPS,
 	MNEMO_ADDPD,
 	MNEMO_ADDSS,
 	MNEMO_ADDSD,
+	
+	MNEMO_VZEROUPPER,
+
+	MNEMO_VMOVAPS,
+	MNEMO_VMOVAPD,
+
+	MNEMO_VMOVUPS,
+	MNEMO_VMOVUPD,
+	MNEMO_VMOVSS,
+	MNEMO_VMOVSD,
+
+	MNEMO_VXORPS,
+	MNEMO_VXORPD,
+
+	MNEMO_ANDN,
+
+	MNEMO_BEXTR,
+	MNEMO_SHLX,
+	MNEMO_SARX,
+	MNEMO_SHRX,
 	enum_count(x86_Mnemonic),
 }
 x86_Mnemonic;
-enum_check(x86_Mnemonic, 116);
-
-static_assert(MNEMO_JO    + 1 == MNEMO_JNO);
-static_assert(MNEMO_JNO   + 1 == MNEMO_JB);
-static_assert(MNEMO_JB    + 1 == MNEMO_JAE);
-static_assert(MNEMO_JAE   + 1 == MNEMO_JE);
-static_assert(MNEMO_JE    + 1 == MNEMO_JNE);
-static_assert(MNEMO_JNE   + 1 == MNEMO_JBE);
-static_assert(MNEMO_JBE   + 1 == MNEMO_JA);
-static_assert(MNEMO_JA    + 1 == MNEMO_JS);
-static_assert(MNEMO_JS    + 1 == MNEMO_JNS);
-static_assert(MNEMO_JNS   + 1 == MNEMO_JP);
-static_assert(MNEMO_JP    + 1 == MNEMO_JNP);
-static_assert(MNEMO_JNP   + 1 == MNEMO_JL);
-static_assert(MNEMO_JL    + 1 == MNEMO_JGE);
-static_assert(MNEMO_JGE   + 1 == MNEMO_JLE);
-static_assert(MNEMO_JLE   + 1 == MNEMO_JG);
-
-static_assert(MNEMO_SETO  + 1 == MNEMO_SETNO);
-static_assert(MNEMO_SETNO + 1 == MNEMO_SETB);
-static_assert(MNEMO_SETB  + 1 == MNEMO_SETAE);
-static_assert(MNEMO_SETAE + 1 == MNEMO_SETE);
-static_assert(MNEMO_SETE  + 1 == MNEMO_SETNE);
-static_assert(MNEMO_SETNE + 1 == MNEMO_SETBE);
-static_assert(MNEMO_SETBE + 1 == MNEMO_SETA);
-static_assert(MNEMO_SETA  + 1 == MNEMO_SETS);
-static_assert(MNEMO_SETS  + 1 == MNEMO_SETNS);
-static_assert(MNEMO_SETNS + 1 == MNEMO_SETP);
-static_assert(MNEMO_SETP  + 1 == MNEMO_SETNP);
-static_assert(MNEMO_SETNP + 1 == MNEMO_SETL);
-static_assert(MNEMO_SETL  + 1 == MNEMO_SETGE);
-static_assert(MNEMO_SETGE + 1 == MNEMO_SETLE);
-static_assert(MNEMO_SETLE + 1 == MNEMO_SETG);
-
-static_assert(MNEMO_CMOVO  + 1 == MNEMO_CMOVNO);
-static_assert(MNEMO_CMOVNO + 1 == MNEMO_CMOVB);
-static_assert(MNEMO_CMOVB  + 1 == MNEMO_CMOVAE);
-static_assert(MNEMO_CMOVAE + 1 == MNEMO_CMOVE);
-static_assert(MNEMO_CMOVE  + 1 == MNEMO_CMOVNE);
-static_assert(MNEMO_CMOVNE + 1 == MNEMO_CMOVBE);
-static_assert(MNEMO_CMOVBE + 1 == MNEMO_CMOVA);
-static_assert(MNEMO_CMOVA  + 1 == MNEMO_CMOVS);
-static_assert(MNEMO_CMOVS  + 1 == MNEMO_CMOVNS);
-static_assert(MNEMO_CMOVNS + 1 == MNEMO_CMOVP);
-static_assert(MNEMO_CMOVP  + 1 == MNEMO_CMOVNP);
-static_assert(MNEMO_CMOVNP + 1 == MNEMO_CMOVL);
-static_assert(MNEMO_CMOVL  + 1 == MNEMO_CMOVGE);
-static_assert(MNEMO_CMOVGE + 1 == MNEMO_CMOVLE);
-static_assert(MNEMO_CMOVLE + 1 == MNEMO_CMOVG);
+enum_check(x86_Mnemonic, 159);
 
 static const char
 *x86_mnemonics[enum_count(x86_Mnemonic)] =
@@ -343,6 +351,12 @@ static const char
 	[MNEMO_SHL]       = "shl",
 	[MNEMO_SHR]       = "shr",
 	[MNEMO_SAR]       = "sar",
+	[MNEMO_NOT]       = "not",
+	[MNEMO_NEG]       = "neg",
+	[MNEMO_MUL]       = "mul",
+	[MNEMO_IMUL]      = "imul",
+	[MNEMO_DIV]       = "div",
+	[MNEMO_IDIV]      = "idiv",
 	[MNEMO_MOV]       = "mov",
 	[MNEMO_MOVZX]     = "movzx",
 	[MNEMO_MOVSX]     = "movsx",
@@ -351,6 +365,12 @@ static const char
 	[MNEMO_PUSH]      = "push",
 	[MNEMO_POP]       = "pop",
 	[MNEMO_JMP]       = "jmp",
+	[MNEMO_JCXZ]      = "jcxz",
+	[MNEMO_JECXZ]     = "jecxz",
+	[MNEMO_JRCXZ]     = "jrcxz",
+	[MNEMO_LOOPNE]    = "loopne",
+	[MNEMO_LOOPE]     = "loope",
+	[MNEMO_LOOP]      = "loop",
 	[MNEMO_JO]        = "jo",
 	[MNEMO_JNO]       = "jno",
 	[MNEMO_JB]        = "jb",
@@ -399,17 +419,30 @@ static const char
 	[MNEMO_CMOVGE]    = "cmovge",
 	[MNEMO_CMOVLE]    = "cmovle",
 	[MNEMO_CMOVG]     = "cmovg",
+	[MNEMO_ENTER]     = "enter",
+	[MNEMO_LEAVE]     = "leave",
 	[MNEMO_CALL]      = "call",
+	[MNEMO_RET]       = "ret",
 	[MNEMO_HLT]       = "hlt",
-	[MNEMO_CLD]       = "cld",
+	[MNEMO_BT]        = "bt",
+	[MNEMO_CLC]		  = "clc",
+	[MNEMO_STC]	      = "stc",
 	[MNEMO_CLI]       = "cli",
+	[MNEMO_STI]       = "sti",
+	[MNEMO_CLD]       = "cld",
+	[MNEMO_STD]       = "std",
 	[MNEMO_XABORT]    = "xabort",
 	[MNEMO_XBEGIN]    = "xbegin",
 	[MNEMO_MOVS]      = "movs",
+	[MNEMO_LODSB]     = "lodsb",
+	[MNEMO_LODSW]     = "lodsw",
+	[MNEMO_LODSD]     = "lodsd",
+	[MNEMO_LODSQ]     = "lodsq",
 	[MNEMO_CWD]       = "cwd",
 	[MNEMO_CDQ]       = "cdq",
 	[MNEMO_CQO]       = "cqo",
-	[MNEMO_RET]       = "ret",
+	[MNEMO_BSF]       = "bsf",
+	[MNEMO_TZCNT]     = "tzcnt",
 	[MNEMO_PADDD]     = "paddd",
 	[MNEMO_PSHUFB]    = "pshufb",
 	[MNEMO_PHADDW]    = "phaddw",
@@ -419,10 +452,33 @@ static const char
 	[MNEMO_PHSUBW]    = "phsubw",
 	[MNEMO_PHSUBD]    = "phsubd",
 	[MNEMO_PHSUBSW]   = "phsubsw",
+	[MNEMO_MOVAPS]    = "movaps",
+	[MNEMO_MOVAPD]    = "movapd",
+	[MNEMO_MOVUPS]    = "movups",
+	[MNEMO_MOVUPD]    = "movupd",
+	[MNEMO_MOVSS]     = "movss",
+	[MNEMO_MOVSD]     = "movsd",
+	[MNEMO_XORPS]     = "xorps",
+	[MNEMO_XORPD]     = "xorpd",
 	[MNEMO_ADDPS]     = "addps",
 	[MNEMO_ADDPD]     = "addpd",
 	[MNEMO_ADDSS]     = "addss",
 	[MNEMO_ADDSD]     = "addsd",
+
+	[MNEMO_VZEROUPPER] = "vzeroupper",
+	[MNEMO_VMOVAPS]    = "vmovaps",
+	[MNEMO_VMOVAPD]    = "vmovapd",
+	[MNEMO_VMOVUPS]    = "vmovups",
+	[MNEMO_VMOVUPD]    = "vmovupd",
+	[MNEMO_VMOVSS]     = "vmovss",
+	[MNEMO_VMOVSD]     = "vmovsd",
+	[MNEMO_VXORPS]     = "vxorps",
+	[MNEMO_VXORPD]     = "vxorpd",
+	[MNEMO_ANDN]	   = "andn",
+	[MNEMO_BEXTR]      = "bextr",
+	[MNEMO_SHLX]       = "shlx",
+	[MNEMO_SARX]       = "sarx",
+	[MNEMO_SHRX]       = "shrx",
 };
 
 static_assert(MNEMO_CWD + 1 == MNEMO_CDQ && MNEMO_CDQ + 1 == MNEMO_CQO);

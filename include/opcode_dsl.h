@@ -78,6 +78,7 @@
 # define	Gb	OP(G,  B)
 # define	Ib	OP(I,  B)
 # define	Jb	OP(J,  B)
+# define	Ob	OP(O,  B)
 # define	Xb	OP(X,  B)
 # define	Yb	OP(Y,  B)
 # define	OPb	OP(OP, B)
@@ -93,20 +94,29 @@
 # define	Gv	OP(G,  V)
 # define	Iv	OP(I,  V)
 # define	Mv	OP(M,  V)
+# define	Ov	OP(O,  V)
+# define	Xv	OP(X,  V)
 # define	OPv	OP(OP, V)
 
 # define	Ew	OP(E,  W)
 # define	Iw	OP(I,  W)
 
+# define	Hx	OP(H,  X)
 # define	Vx	OP(V,  X)
 # define	Wx	OP(W,  X)
+
+# define	By	OP(B,  Y)
+# define	Ey	OP(E,  Y)
+# define	Gy	OP(G,  Y)
 
 # define	Iz	OP(I,  Z)
 # define	Jz	OP(J,  Z)
 
+# define	Hps	OP(H,  PS)
 # define	Vps	OP(V,  PS)
 # define	Wps	OP(W,  PS)
 
+# define	Hpd	OP(H,  PD)
 # define	Vpd	OP(V,  PD)
 # define	Wpd	OP(W,  PD)
 
@@ -242,22 +252,24 @@ meta_base =
 	Opcode(0x63, M(MOVSXD), O(Gv, Ev), F(O64)),
 	Opcode(0x68, M(PUSH), O(Iz), F(D64)),
 
-	Opcode(0x70, M(JO),  O(Eb, Ib)),
-	Opcode(0x71, M(JNO), O(Eb, Ib)),
-	Opcode(0x72, M(JB),  O(Eb, Ib)),
-	Opcode(0x73, M(JAE), O(Eb, Ib)),
-	Opcode(0x74, M(JE),  O(Eb, Ib)),
-	Opcode(0x75, M(JNE), O(Eb, Ib)),
-	Opcode(0x76, M(JBE), O(Eb, Ib)),
-	Opcode(0x77, M(JA),  O(Eb, Ib)),
-	Opcode(0x78, M(JS),  O(Eb, Ib)),
-	Opcode(0x79, M(JNS), O(Eb, Ib)),
-	Opcode(0x7a, M(JP),  O(Eb, Ib)),
-	Opcode(0x7b, M(JNP), O(Eb, Ib)),
-	Opcode(0x7c, M(JL),  O(Eb, Ib)),
-	Opcode(0x7d, M(JGE), O(Eb, Ib)),
-	Opcode(0x7e, M(JLE), O(Eb, Ib)),
-	Opcode(0x7f, M(JG),  O(Eb, Ib)),
+	Opcode(0x6b, M(IMUL), O(Gv, Ev, Ib)),
+
+	Opcode(0x70, M(JO),  O(Jb)),
+	Opcode(0x71, M(JNO), O(Jb)),
+	Opcode(0x72, M(JB),  O(Jb)),
+	Opcode(0x73, M(JAE), O(Jb)),
+	Opcode(0x74, M(JE),  O(Jb)),
+	Opcode(0x75, M(JNE), O(Jb)),
+	Opcode(0x76, M(JBE), O(Jb)),
+	Opcode(0x77, M(JA),  O(Jb)),
+	Opcode(0x78, M(JS),  O(Jb)),
+	Opcode(0x79, M(JNS), O(Jb)),
+	Opcode(0x7a, M(JP),  O(Jb)),
+	Opcode(0x7b, M(JNP), O(Jb)),
+	Opcode(0x7c, M(JL),  O(Jb)),
+	Opcode(0x7d, M(JGE), O(Jb)),
+	Opcode(0x7e, M(JLE), O(Jb)),
+	Opcode(0x7f, M(JG),  O(Jb)),
 
 	SplitRegP(0x80, meta_group1, O(Eb, Ib)),
 	SplitRegP(0x81, meta_group1, O(Ev, Iz)),
@@ -283,10 +295,18 @@ meta_base =
 
 	Opcode(0x99, M(CWD), F(PRMO)),
 
+	Opcode(0xa0, M(MOV), O(AL, Ob)),
+	Opcode(0xa1, M(MOV), O(RA, Ov)),
+	Opcode(0xa2, M(MOV), O(Ob, AL)),
+	Opcode(0xa3, M(MOV), O(Ov, RA)),
+
 	Opcode(0xa4, M(MOVS), O(Yb, Xb)),
 
 	Opcode(0xa8, M(TEST), O(AL, Ib)),
 	Opcode(0xa9, M(TEST), O(RA, Iz)),
+
+	Opcode(0xac, M(LODSB), O(AL, Xb)), 
+	Opcode(0xad, M(LODSW), O(RA, Xv)), 
 
 	Opcode(0xb0, M(MOV), O(OPb, Ib)),
 	Opcode(0xb1, M(MOV), O(OPb, Ib)),
@@ -325,7 +345,7 @@ meta_base =
 	}),
 	SplitReg(0xc7,
 	{
-		Opcode(0b000, M(MOV), O(Eb, Ib)),
+		Opcode(0b000, M(MOV), O(Ev, Iz)),
 		SplitMod(0b111,
 		{
 			SplitRm(SPLIT_MOD_REG,
@@ -335,10 +355,18 @@ meta_base =
 		}),
 	}),
 
-	SplitRegP(0xd1, meta_group2, O(Eb, ONE)),
-	SplitRegP(0xd2, meta_group2, O(Ev, ONE)),
-	SplitRegP(0xd3, meta_group2, O(Eb, CL)),
-	SplitRegP(0xd4, meta_group2, O(Ev, CL)),
+//	Opcode(0xc8, M(ENTER), O(Iw, Ib)),
+	Opcode(0xc9, M(LEAVE), F(D64)),
+
+	SplitRegP(0xd0, meta_group2, O(Eb, ONE)),
+	SplitRegP(0xd1, meta_group2, O(Ev, ONE)),
+	SplitRegP(0xd2, meta_group2, O(Eb, CL)),
+	SplitRegP(0xd3, meta_group2, O(Ev, CL)),
+
+	Opcode(0xe0, M(LOOPNE), O(Jb), F(F64)),
+	Opcode(0xe1, M(LOOPE),  O(Jb), F(F64)),
+	Opcode(0xe2, M(LOOP),   O(Jb), F(F64)),
+	Opcode(0xe3, M(JCXZ),   O(Jb), F(F64, PRMA)),
 
 	Opcode(0xe8, M(CALL), O(Jz), F(F64)),
 	Opcode(0xe9, M(JMP),  O(Jz), F(F64)),
@@ -350,7 +378,8 @@ meta_base =
 	SplitReg(0xf6, 
 	{
 		Opcode(0b000, M(TEST), O(Ib)),
-		Opcode(0b001, M(TEST), O(Ib)), // should not be here
+		// TODO: 20260923-093103
+		Opcode(0b001, M(TEST), O(Ib)),
 		Opcode(0b010, M(NOT)),
 		Opcode(0b011, M(NEG)),
 		Opcode(0b100, M(MUL),  O(AL)),
@@ -362,7 +391,8 @@ meta_base =
 	SplitReg(0xf7, 
 	{
 		Opcode(0b000, M(TEST), O(Iz)),
-		Opcode(0b001, M(TEST), O(Iz)), // should not be here
+		// TODO: 20260923-093103
+		Opcode(0b001, M(TEST), O(Iz)),
 		Opcode(0b010, M(NOT)),
 		Opcode(0b011, M(NEG)),
 		Opcode(0b100, M(MUL),  O(RA)),
@@ -399,9 +429,28 @@ CONST OpcodeSplitPfx	meta_base_0f_1e;
 CONST OpcodeSplitReg	meta_base_0f_1f;
 CONST OpcodeSplitPfx	meta_base_0f_58;
 
+CONST OpcodeSplitPfx	meta_base_0f_sse_66;
+
+// 2 BYTE OPCODES (0F XX)
 CONST OpcodeTable
 meta_base_0f =
 {
+	SplitPfx(0x10,
+	{
+		Opcode(SPLIT_PFX_NONE, M(MOVUPS), O(Vps, Wps)),
+		Opcode(SPLIT_PFX_66,   M(MOVUPD), O(Vpd, Wpd)),
+		Opcode(SPLIT_PFX_F2,   M(MOVSS),  O(Vss, Wss)),
+		Opcode(SPLIT_PFX_F3,   M(MOVSD),  O(Vsd, Wsd)),
+	}),
+
+	SplitPfx(0x11,
+	{
+		Opcode(SPLIT_PFX_NONE, M(MOVUPS), O(Wps, Vps)),
+		Opcode(SPLIT_PFX_66,   M(MOVUPD), O(Wpd, Vpd)),
+		Opcode(SPLIT_PFX_F2,   M(MOVSS),  O(Wss, Vss)),
+		Opcode(SPLIT_PFX_F3,   M(MOVSD),  O(Wsd, Vsd)),
+	}),
+
 	SplitPfx(0x1e,
 	{
 		SplitMod(SPLIT_PFX_F3,
@@ -419,6 +468,12 @@ meta_base_0f =
 	SplitReg(0x1f,
 	{
 		Opcode(0b000, M(NOP), O(Ev)),
+	}),
+
+	SplitPfx(0x29,
+	{
+		Opcode(SPLIT_PFX_NONE, M(MOVAPS), O(Wps, Vps)),
+		Opcode(SPLIT_PFX_NONE, M(MOVAPD), O(Wpd, Vpd)),
 	}),
 
 	Table(0x38, meta_base_0f_38),
@@ -441,6 +496,12 @@ meta_base_0f =
 	Opcode(0x4e, M(CMOVLE), O(Gv, Ev)),
 	Opcode(0x4f, M(CMOVG),  O(Gv, Ev)),
 
+	SplitPfx(0x57,
+	{
+		Opcode(SPLIT_PFX_NONE, M(XORPS), O(Vps, Wps)),
+		Opcode(SPLIT_PFX_66,   M(XORPD), O(Vpd, Wpd)),
+	}),
+
 	SplitPfx(0x58,
 	{
 		Opcode(SPLIT_PFX_NONE, M(ADDPS), O(Vps, Wps)),
@@ -449,22 +510,22 @@ meta_base_0f =
 		Opcode(SPLIT_PFX_F2,   M(ADDSD), O(Vsd, Wsd)),
 	}),
 
-	Opcode(0x80, M(JO),  O(Iz)),
-	Opcode(0x81, M(JNO), O(Iz)),
-	Opcode(0x82, M(JB),  O(Iz)),
-	Opcode(0x83, M(JAE), O(Iz)),
-	Opcode(0x84, M(JE),  O(Iz)),
-	Opcode(0x85, M(JNE), O(Iz)),
-	Opcode(0x86, M(JBE), O(Iz)),
-	Opcode(0x87, M(JA),  O(Iz)),
-	Opcode(0x88, M(JS),  O(Iz)),
-	Opcode(0x89, M(JNS), O(Iz)),
-	Opcode(0x8a, M(JP),  O(Iz)),
-	Opcode(0x8b, M(JNP), O(Iz)),
-	Opcode(0x8c, M(JL),  O(Iz)),
-	Opcode(0x8d, M(JGE), O(Iz)),
-	Opcode(0x8e, M(JLE), O(Iz)),
-	Opcode(0x8f, M(JG),  O(Iz)),
+	Opcode(0x80, M(JO),  O(Jz)),
+	Opcode(0x81, M(JNO), O(Jz)),
+	Opcode(0x82, M(JB),  O(Jz)),
+	Opcode(0x83, M(JAE), O(Jz)),
+	Opcode(0x84, M(JE),  O(Jz)),
+	Opcode(0x85, M(JNE), O(Jz)),
+	Opcode(0x86, M(JBE), O(Jz)),
+	Opcode(0x87, M(JA),  O(Jz)),
+	Opcode(0x88, M(JS),  O(Jz)),
+	Opcode(0x89, M(JNS), O(Jz)),
+	Opcode(0x8a, M(JP),  O(Jz)),
+	Opcode(0x8b, M(JNP), O(Jz)),
+	Opcode(0x8c, M(JL),  O(Jz)),
+	Opcode(0x8d, M(JGE), O(Jz)),
+	Opcode(0x8e, M(JLE), O(Jz)),
+	Opcode(0x8f, M(JG),  O(Jz)),
 	
 	Opcode(0x90, M(SETO),  O(Eb)),
 	Opcode(0x91, M(SETNO), O(Eb)),
@@ -483,28 +544,42 @@ meta_base_0f =
 	Opcode(0x9e, M(SETLE), O(Eb)),
 	Opcode(0x9f, M(SETG),  O(Eb)),
 
+	Opcode(0xa3, M(BT), O(Ev, Gv)),
+
 	Opcode(0xb6, M(MOVZX), O(Gv, Eb)),
 	Opcode(0xb7, M(MOVZX), O(Gv, Ew)),
-};
 
-CONST OpcodeSplitPfx	meta_base_0f_38_0x;
+	SplitPfx(0xbc,
+	{
+		Opcode(SPLIT_PFX_NONE, M(BSF)),
+		Opcode(SPLIT_PFX_F3,   M(TZCNT)),
+	}, O(Gv, Ev)),
+
+	SplitPfxP(0xf8, meta_base_0f_sse_66, M(PSUBB)),
+	SplitPfxP(0xf9, meta_base_0f_sse_66, M(PSUBW)),
+	SplitPfxP(0xfa, meta_base_0f_sse_66, M(PSUBD)),
+	SplitPfxP(0xfb, meta_base_0f_sse_66, M(PSUBQ)),
+	SplitPfxP(0xfc, meta_base_0f_sse_66, M(PADDB)),
+	SplitPfxP(0xfd, meta_base_0f_sse_66, M(PADDW)),
+	SplitPfxP(0xfe, meta_base_0f_sse_66, M(PADDD)),
+};
 
 // 3 BYTES OPCODES (0F 38 XX)
 CONST OpcodeTable
 meta_base_0f_38 =
 {
-	SplitPfxP(0x00, meta_base_0f_38_0x, M(PSHUFB)),
-	SplitPfxP(0x01, meta_base_0f_38_0x, M(PHADDW)),
-	SplitPfxP(0x02, meta_base_0f_38_0x, M(PHADDD)),
-	SplitPfxP(0x03, meta_base_0f_38_0x, M(PHADDSW)),
-	SplitPfxP(0x04, meta_base_0f_38_0x, M(PMADDUBSW)),
-	SplitPfxP(0x05, meta_base_0f_38_0x, M(PHSUBW)),
-	SplitPfxP(0x06, meta_base_0f_38_0x, M(PHSUBD)),
-	SplitPfxP(0x07, meta_base_0f_38_0x, M(PHSUBSW)),
-	SplitPfxP(0x08, meta_base_0f_38_0x, M(PSIGNB)),
-	SplitPfxP(0x09, meta_base_0f_38_0x, M(PSIGNW)),
-	SplitPfxP(0x0a, meta_base_0f_38_0x, M(PSIGND)),
-	SplitPfxP(0x0b, meta_base_0f_38_0x, M(PMULHRSW)),
+	SplitPfxP(0x00, meta_base_0f_sse_66, M(PSHUFB)),
+	SplitPfxP(0x01, meta_base_0f_sse_66, M(PHADDW)),
+	SplitPfxP(0x02, meta_base_0f_sse_66, M(PHADDD)),
+	SplitPfxP(0x03, meta_base_0f_sse_66, M(PHADDSW)),
+	SplitPfxP(0x04, meta_base_0f_sse_66, M(PMADDUBSW)),
+	SplitPfxP(0x05, meta_base_0f_sse_66, M(PHSUBW)),
+	SplitPfxP(0x06, meta_base_0f_sse_66, M(PHSUBD)),
+	SplitPfxP(0x07, meta_base_0f_sse_66, M(PHSUBSW)),
+	SplitPfxP(0x08, meta_base_0f_sse_66, M(PSIGNB)),
+	SplitPfxP(0x09, meta_base_0f_sse_66, M(PSIGNW)),
+	SplitPfxP(0x0a, meta_base_0f_sse_66, M(PSIGND)),
+	SplitPfxP(0x0b, meta_base_0f_sse_66, M(PMULHRSW)),
 };
 
 // 3 BYTES OPCODES (0F 3A XX)
@@ -515,7 +590,7 @@ meta_base_0f_3a =
 };
 
 CONST OpcodeSplitPfx
-meta_base_0f_38_0x =
+meta_base_0f_sse_66 =
 {
 	Opcode(SPLIT_PFX_NONE, O(Pq, Qq)),
 	Opcode(SPLIT_PFX_66,   O(Vx, Wx)),
@@ -545,6 +620,85 @@ meta_group2 =
 	Opcode(0b101, M(SHR)),
 	
 	Opcode(0b111, M(SAR)),
+};
+
+CONST OpcodeTable	meta_base_vex;
+CONST OpcodeTable	meta_base_vex_38;
+CONST OpcodeTable	meta_base_vex_3a;
+
+CONST OpcodeMeta
+meta_root_vex = META_TABLE(meta_base_vex);
+
+CONST OpcodeMeta
+meta_root_vex_38 = META_TABLE(meta_base_vex_38);
+
+CONST OpcodeMeta
+meta_root_vex_3a = META_TABLE(meta_base_vex_3a);
+
+CONST OpcodeTable
+meta_base_vex =
+{
+	SplitPfx(0x10,
+	{
+		Opcode(SPLIT_PFX_NONE, M(VMOVUPS), O(Vps, Wps)),
+		Opcode(SPLIT_PFX_66,   M(VMOVUPD), O(Vpd, Wpd)),
+		Opcode(SPLIT_PFX_F2,   M(VMOVSS),  O(Vss, Hx, Wss)),
+		Opcode(SPLIT_PFX_F3,   M(VMOVSD),  O(Vsd, Hx, Wsd)),
+	}),
+
+	SplitPfx(0x11,
+	{
+		Opcode(SPLIT_PFX_NONE, M(VMOVUPS), O(Wps, Vps)),
+		Opcode(SPLIT_PFX_66,   M(VMOVUPD), O(Wpd, Vpd)),
+		Opcode(SPLIT_PFX_F2,   M(VMOVSS),  O(Wss, Hx, Vss)),
+		Opcode(SPLIT_PFX_F3,   M(VMOVSD),  O(Wsd, Hx, Vsd)),
+	}),
+
+	SplitPfx(0x28,
+	{
+		Opcode(SPLIT_PFX_NONE, M(VMOVAPS), O(Vps, Wps)),
+		Opcode(SPLIT_PFX_NONE, M(VMOVAPD), O(Vpd, Wpd)),
+	}),
+	SplitPfx(0x29,
+	{
+		Opcode(SPLIT_PFX_NONE, M(VMOVAPS), O(Wps, Vps)),
+		Opcode(SPLIT_PFX_NONE, M(VMOVAPD), O(Wpd, Vpd)),
+	}),
+
+	SplitPfx(0x57,
+	{
+		Opcode(SPLIT_PFX_NONE, M(VXORPS), O(Vps, Hps, Wps)),
+		Opcode(SPLIT_PFX_66,   M(VXORPD), O(Vpd, Hpd, Wpd)),
+	}),
+
+	SplitPfx(0x77,
+	{
+		Opcode(SPLIT_PFX_NONE, M(VZEROUPPER)),
+	}),
+
+};
+
+CONST OpcodeTable
+meta_base_vex_38 =
+{
+	SplitPfx(0xf2,
+	{
+		Opcode(SPLIT_PFX_NONE, M(ANDN)),
+	}, O(Gy, By, Ey)),
+
+	SplitPfx(0xf7, 
+	{
+		Opcode(SPLIT_PFX_NONE, M(BEXTR)),
+		Opcode(SPLIT_PFX_66,   M(SHLX)),
+		Opcode(SPLIT_PFX_F3,   M(SARX)),
+		Opcode(SPLIT_PFX_F2,   M(SHRX)),
+	}, O(Gy, Ey, By)),
+};
+
+CONST OpcodeTable
+meta_base_vex_3a =
+{
+
 };
 
 #endif

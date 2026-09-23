@@ -24,11 +24,16 @@
 # define	PROMO_ADDR		1
 # define	PROMO_OP		2
 
+# define	REPEAT_NONE		0
+# define	REPEAT_REP		1
+# define	REPEAT_REPCC	2
+
 typedef struct OpcodeFlags
 {
 	u8	default_size : 2;
 	u8	validity     : 2;
 	u8	promotable   : 2;
+	u8	repeatable   : 2;
 	u8	lockable	 : 1;
 	u8	privileged   : 1;
 }
@@ -89,8 +94,6 @@ struct OpcodeMeta
 	OpcodeFlags			flags;
 	x86_Mnemonic		mnemonic;
 	const OpcodeMeta	*split;
-	const void			*_reserved; // maybe a function pointer for edge cases
-									// bumps sizeof OpcodeMeta to 0x40 !
 };
 
 typedef OpcodeMeta	OpcodeTable    [0x100];

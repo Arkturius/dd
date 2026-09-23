@@ -8,6 +8,8 @@
 #include <stddef.h>
 #include <utils.h>
 
+# include <opcode_dsl.h>
+
 INTERN void
 decoder_new(Decoder *dp, u8 *stream, u32 len)
 {
@@ -180,6 +182,52 @@ decoder_ensure_modrm(Decoder *dp)
 	decode_disp(dp);
 }
 
+INTERN u8
+resolve_ext_p(const DecodeExtension ex)
+{
+	switch (ex.raw[0])
+	{
+		case 0xC5: return ex.vex2.p;
+		case 0xC4: return ex.vex3.p;
+		case 0x62: return ex.evex.p;
+		default:
+			UNREACHABLE();
+	}
+}
+
+INTERN u8
+resolve_ext_m(const DecodeExtension ex)
+{
+	switch (ex.raw[0])
+	{
+		case 0xC5: return 0b00001;
+		case 0xC4: return ex.vex3.m;
+		case 0x62: return ex.evex.m;
+		default:
+			UNREACHABLE();
+	}
+}
+
+INTERN u8
+decode_prefix_split(Decoder *dp)
+{
+	u8	idx;
+
+	if (dp->extension.raw[0] == 0xC4 || dp->extension.raw[0] == 0xC5)
+		idx = resolve_ext_p(dp->extension);
+	else
+	{
+		idx = SPLIT_PFX_NONE;
+		if (dp->prefix.opsize)
+			idx = SPLIT_PFX_66;
+		if (dp->prefix.repeat == REPEAT_E)
+			idx = SPLIT_PFX_F3;
+		if (dp->prefix.repeat == REPEAT_NE)
+			idx = SPLIT_PFX_F2;
+	}
+	return idx;
+}
+
 INTERN const OpcodeMeta
 *resolve_opcode_meta(Decoder *dp, const OpcodeMeta *meta)
 {
@@ -197,13 +245,7 @@ INTERN const OpcodeMeta
 				: SPLIT_MOD_MEM;
 			break ;
 		case META_SPLIT_PFX:
-			idx = SPLIT_PFX_NONE;
-			if (dp->prefix.opsize)
-				idx = SPLIT_PFX_66;
-			if (dp->prefix.repeat == REPEAT_E)
-				idx = SPLIT_PFX_F3;
-			if (dp->prefix.repeat == REPEAT_NE)
-				idx = SPLIT_PFX_F2;
+			idx = decode_prefix_split(dp);
 			break ;
 		case META_SPLIT_REG:
 			decoder_ensure_modrm(dp);
@@ -219,13 +261,39 @@ INTERN const OpcodeMeta
 	return &meta->split[idx];
 }
 
+INTERN const OpcodeMeta
+*resolve_meta_root(Decoder *dp)
+{
+	const OpcodeMeta	*root = &meta_root;
+
+	if 
+	(
+		dp->extension.raw[0] == 0xC4 || 
+		dp->extension.raw[0] == 0xC5 || 
+		dp->extension.raw[0] == 0x62
+	)
+	{
+		switch (resolve_ext_m(dp->extension))
+		{
+			case 0b00001: root = &meta_root_vex;    break ;
+			case 0b00010: root = &meta_root_vex_38; break ;
+			case 0b00011: root = &meta_root_vex_3a; break ;
+			default:
+				UNREACHABLE(); // TODO: 20260923-145816
+		}
+	}
+	return root;
+}
+
 INTERN OpcodeMeta
 resolve_opcode(Decoder *dp)
 {
 	// TODO: Here should go the switch between base tables (VEX)
 	//       The 32bit switch must be wider and cover the whole
 	//       decode session.
-	const OpcodeMeta	*meta = &opcode_meta_root;
+
+	const OpcodeMeta	*meta = resolve_meta_root(dp);
+//	const OpcodeMeta	*meta = &meta_root;
 
 	while (true)
 	{
@@ -290,9 +358,9 @@ resolve_ext_L(const DecodeExtension ex)
 {
 	switch (ex.raw[0])
 	{
-		case 0xC5: return !ex.vex2.L;
-		case 0xC4: return !ex.vex3.L;
-		case 0x62: return !ex.evex.LL;
+		case 0xC5: return ex.vex2.L;
+		case 0xC4: return ex.vex3.L;
+		case 0x62: return ex.evex.LL;
 		default:   return 0;
 	}
 }
@@ -327,6 +395,10 @@ resolve_operand_size
 			if (ps.opsize)
 				return SZ_WORD;
 			if (of.default_size == DFL_SIZE_D64)
+				return SZ_QWORD;
+			return SZ_DWORD;
+		case OPTYPE_Y:
+			if (resolve_ext_W(ex))
 				return SZ_QWORD;
 			return SZ_DWORD;
 		case OPTYPE_Z:
@@ -407,8 +479,10 @@ decode_opcode(Decoder *dp)
 	for (u32 i = 0; i < dp->nops; ++i)
 	{
 		OpcodeOperand	op = dp->ops[i];
-		x86_Size		sz = resolve_operand_size(dp, op.type, &meta);
+		x86_Size		sz = 0;
 
+		if (op.method != METHOD_FX)
+			sz = resolve_operand_size(dp, op.type, &meta);
 		resolve_operand_method(dp, op.method, 1 << sz);
 	}
 	return true;
@@ -437,15 +511,38 @@ decoder_run(Decoder *dp, x86_Instructions *code)
 	{
 		x86_Instruction	ins = {0};
 
+		u32	addr = dp->pc - dp->start;
+
 		if (!decode_instruction(dp))
 			return false;
 
 		if (!x86_mnemonics[dp->mnemonic])
 			TODO("Missing mnemonic display string - %d", dp->mnemonic);
 
- 		INFO("< %s >", x86_mnemonics[dp->mnemonic]);
-		INFO(" %zu / %zu bytes", dp->pc - dp->start, dp->end - dp->start);
-		hexdump(dp->opcode.raw, dp->opcode.len);
+		buf_with(out)
+		{
+			u32 i = 0;
+
+			buf_appendf(&out, "%8x:       ", addr);
+			for (; i < dp->opcode.len && i < 7; ++i)
+				buf_appendf(&out, "%02x ", dp->opcode.raw[i]);
+			buf_appendf(&out, "%*.s    ", 3 * (7 - i), " ");
+			buf_appendf(&out, "%s", x86_mnemonics[dp->mnemonic]);
+			if (i < dp->opcode.len)
+			{
+				addr += i;
+				buf_appendf(&out, "\n%8x:       ", addr);
+				for (; i < dp->opcode.len; ++i)
+					buf_appendf(&out, "%02x ", dp->opcode.raw[i]);
+				buf_appendf(&out, "%.*s", 3 * (14 - i), " ");
+			}
+			buf_append(&out, "\n");
+			buf_print(&out);
+		}
+
+//  		INFO("< %s >", x86_mnemonics[dp->mnemonic]);
+// 		INFO(" %zu / %zu bytes", dp->pc - dp->start, dp->end - dp->start);
+// 		hexdump(dp->opcode.raw, dp->opcode.len);
 
 		decoder_materialize(dp, &ins);
 		decoder_clear(dp);
