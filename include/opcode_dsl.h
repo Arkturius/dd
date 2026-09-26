@@ -83,12 +83,18 @@
 # define	Yb	OP(Y,  B)
 # define	OPb	OP(OP, B)
 
+# define	Gd	OP(G,  D)
+
+# define	Udq	OP(U,  DQ)
+
 # define	Ap	OP(A,  P)
 # define	Ep	OP(E,  P)
 # define	Mp	OP(M,  P)
 
+# define	Mq	OP(M,  Q)
 # define	Pq	OP(P,  Q)
 # define	Qq	OP(Q,  Q)
+# define	Vq	OP(V,  Q)
 
 # define	Ev	OP(E,  V)
 # define	Gv	OP(G,  V)
@@ -120,11 +126,13 @@
 # define	Vpd	OP(V,  PD)
 # define	Wpd	OP(W,  PD)
 
-# define	Vss	OP(V,  PD)
-# define	Wss	OP(W,  PD)
+# define	Hss	OP(H,  SS)
+# define	Vss	OP(V,  SS)
+# define	Wss	OP(W,  SS)
 
-# define	Vsd	OP(V,  PD)
-# define	Wsd	OP(W,  PD)
+# define	Hsd	OP(H,  SD)
+# define	Vsd	OP(V,  SD)
+# define	Wsd	OP(W,  SD)
 
 # define	ONE	FX(1)
 # define	THR	FX(3)
@@ -358,6 +366,8 @@ meta_base =
 //	Opcode(0xc8, M(ENTER), O(Iw, Ib)),
 	Opcode(0xc9, M(LEAVE), F(D64)),
 
+	Opcode(0xcc, M(INT3)),
+
 	SplitRegP(0xd0, meta_group2, O(Eb, ONE)),
 	SplitRegP(0xd1, meta_group2, O(Ev, ONE)),
 	SplitRegP(0xd2, meta_group2, O(Eb, CL)),
@@ -473,7 +483,7 @@ meta_base_0f =
 	SplitPfx(0x29,
 	{
 		Opcode(SPLIT_PFX_NONE, M(MOVAPS), O(Wps, Vps)),
-		Opcode(SPLIT_PFX_NONE, M(MOVAPD), O(Wpd, Vpd)),
+		Opcode(SPLIT_PFX_66,   M(MOVAPD), O(Wpd, Vpd)),
 	}),
 
 	Table(0x38, meta_base_0f_38),
@@ -545,6 +555,8 @@ meta_base_0f =
 	Opcode(0x9f, M(SETG),  O(Eb)),
 
 	Opcode(0xa3, M(BT), O(Ev, Gv)),
+
+	Opcode(0xaf, M(IMUL), O(Gv, Ev)),
 
 	Opcode(0xb6, M(MOVZX), O(Gv, Eb)),
 	Opcode(0xb7, M(MOVZX), O(Gv, Ew)),
@@ -642,27 +654,33 @@ meta_base_vex =
 	{
 		Opcode(SPLIT_PFX_NONE, M(VMOVUPS), O(Vps, Wps)),
 		Opcode(SPLIT_PFX_66,   M(VMOVUPD), O(Vpd, Wpd)),
-		Opcode(SPLIT_PFX_F2,   M(VMOVSS),  O(Vss, Hx, Wss)),
-		Opcode(SPLIT_PFX_F3,   M(VMOVSD),  O(Vsd, Hx, Wsd)),
+		Opcode(SPLIT_PFX_F3,   M(VMOVSS),  O(Vss, Hx, Wss)),
+		Opcode(SPLIT_PFX_F2,   M(VMOVSD),  O(Vsd, Hx, Wsd)),
 	}),
 
 	SplitPfx(0x11,
 	{
 		Opcode(SPLIT_PFX_NONE, M(VMOVUPS), O(Wps, Vps)),
 		Opcode(SPLIT_PFX_66,   M(VMOVUPD), O(Wpd, Vpd)),
-		Opcode(SPLIT_PFX_F2,   M(VMOVSS),  O(Wss, Hx, Vss)),
-		Opcode(SPLIT_PFX_F3,   M(VMOVSD),  O(Wsd, Hx, Vsd)),
+		Opcode(SPLIT_PFX_F3,   M(VMOVSS),  O(Wss, Hx, Vss)),
+		Opcode(SPLIT_PFX_F2,   M(VMOVSD),  O(Wsd, Hx, Vsd)),
+	}),
+
+	SplitPfx(0x13,
+	{
+		Opcode(SPLIT_PFX_NONE, M(VMOVLPS), O(Mq, Vq)),
+		Opcode(SPLIT_PFX_66,   M(VMOVLPD), O(Mq, Vq))
 	}),
 
 	SplitPfx(0x28,
 	{
 		Opcode(SPLIT_PFX_NONE, M(VMOVAPS), O(Vps, Wps)),
-		Opcode(SPLIT_PFX_NONE, M(VMOVAPD), O(Vpd, Wpd)),
+		Opcode(SPLIT_PFX_66,   M(VMOVAPD), O(Vpd, Wpd)),
 	}),
 	SplitPfx(0x29,
 	{
 		Opcode(SPLIT_PFX_NONE, M(VMOVAPS), O(Wps, Vps)),
-		Opcode(SPLIT_PFX_NONE, M(VMOVAPD), O(Wpd, Vpd)),
+		Opcode(SPLIT_PFX_66,   M(VMOVAPD), O(Wpd, Vpd)),
 	}),
 
 	SplitPfx(0x57,
@@ -670,12 +688,60 @@ meta_base_vex =
 		Opcode(SPLIT_PFX_NONE, M(VXORPS), O(Vps, Hps, Wps)),
 		Opcode(SPLIT_PFX_66,   M(VXORPD), O(Vpd, Hpd, Wpd)),
 	}),
+	SplitPfx(0x58,
+	{
+		Opcode(SPLIT_PFX_NONE, M(VADDPS), O(Vps, Hps, Wps)),
+		Opcode(SPLIT_PFX_66,   M(VADDPD), O(Vpd, Hpd, Wpd)),
+		Opcode(SPLIT_PFX_F3,   M(VADDSS), O(Vss, Hss, Wss)),
+		Opcode(SPLIT_PFX_F2,   M(VADDSD), O(Vsd, Hsd, Wsd)),
+	}),
+	SplitPfx(0x59,
+	{
+		Opcode(SPLIT_PFX_NONE, M(VMULPS), O(Vps, Hps, Wps)),
+		Opcode(SPLIT_PFX_66,   M(VMULPD), O(Vpd, Hpd, Wpd)),
+		Opcode(SPLIT_PFX_F3,   M(VMULSS), O(Vss, Hss, Wss)),
+		Opcode(SPLIT_PFX_F2,   M(VMULSD), O(Vsd, Hsd, Wsd)),
+	}),
+	SplitPfx(0x5a,
+	{
+		Opcode(SPLIT_PFX_NONE, M(VCVTPS2PD), O(Vpd, Wps)),
+		Opcode(SPLIT_PFX_66,   M(VCVTPD2PS), O(Vps, Wpd)),
+		Opcode(SPLIT_PFX_F3,   M(VCVTSS2SD), O(Vsd, Hx, Wss)),
+		Opcode(SPLIT_PFX_F2,   M(VCVTSD2SS), O(Vss, Hx, Wsd)),
+	}),
+	SplitPfx(0x5c,
+	{
+		Opcode(SPLIT_PFX_NONE, M(VSUBPS), O(Vps, Hps, Wps)),
+		Opcode(SPLIT_PFX_66,   M(VSUBPD), O(Vpd, Hpd, Wpd)),
+		Opcode(SPLIT_PFX_F3,   M(VSUBSS), O(Vss, Hss, Wss)),
+		Opcode(SPLIT_PFX_F2,   M(VSUBSD), O(Vsd, Hsd, Wsd)),
+	}),
+
+	SplitPfx(0x6f,
+	{
+		Opcode(SPLIT_PFX_66, M(VMOVDQA), O(Vx, Wx)),
+		Opcode(SPLIT_PFX_F3, M(VMOVDQU), O(Vx, Wx)),
+	}),
 
 	SplitPfx(0x77,
 	{
 		Opcode(SPLIT_PFX_NONE, M(VZEROUPPER)),
 	}),
 
+// 	SplitPfx(0x7e,
+// 	{
+// 		Opcode(SPLIT_PFX_NONE, )
+// 	})
+	SplitPfx(0x7f,
+	{
+		Opcode(SPLIT_PFX_66, M(VMOVDQA), O(Wx, Vx)),
+		Opcode(SPLIT_PFX_F3, M(VMOVDQU), O(Wx, Vx)),
+	}),
+
+	SplitPfx(0xc5,
+	{
+		Opcode(SPLIT_PFX_66, M(VPEXTRW), O(Gd, Udq, Ib)),
+	}),
 };
 
 CONST OpcodeTable

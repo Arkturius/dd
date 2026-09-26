@@ -118,6 +118,51 @@ typedef enum x86_RegisterId
 x86_RegisterId;
 enum_check(x86_RegisterId, 32);
 
+# define	REG_GPR_COUNT	16
+# define	REG_GPR_SIZES	4
+
+static const char 
+*reg_gpr_names[REG_GPR_COUNT][REG_GPR_SIZES] =
+{
+	{"al",   "ax",   "eax",  "rax"},
+	{"cl",   "cx",   "ecx",  "rcx"},
+	{"dl",   "dx",   "edx",  "rdx"},
+	{"bl",   "bx",   "ebx",  "rbx"},
+	{"spl",  "sp",   "esp",  "rsp"},
+	{"bpl",  "bp",   "ebp",  "rbp"},
+	{"sil",  "si",   "esi",  "rsi"},
+	{"dil",  "di",   "edi",  "rdi"},
+	{"r8b",  "r8w",  "r8d",  "r8" },
+	{"r9b",  "r9w",  "r9d",  "r9" },
+	{"r10b", "r10w", "r10d", "r10"},
+	{"r11b", "r11w", "r11d", "r11"},
+	{"r12b", "r12w", "r12d", "r12"},
+	{"r13b", "r13w", "r13d", "r13"},
+	{"r14b", "r14w", "r14d", "r14"},
+	{"r15b", "r15w", "r15d", "r15"},
+};
+
+static const char
+*reg_gpr_names_hi8[4] = 
+{
+	"ah",
+	"ch",
+	"dh",
+	"bh"
+};
+
+static const char
+*reg_size_prefixes[7] =
+{
+	[SZ_BYTE]    = "BYTE",
+	[SZ_WORD]    = "WORD",
+	[SZ_DWORD]   = "DWORD",
+	[SZ_QWORD]   = "QWORD",
+	[SZ_XMMWORD] = "XMMWORD",
+	[SZ_YMMWORD] = "YMMWORD",
+	[SZ_ZMMWORD] = "ZMMWORD",
+};
+
 // TODO:
 // needs const char *segment_names
 typedef enum x86_Segment
@@ -134,6 +179,18 @@ typedef enum x86_Segment
 x86_Segment;
 enum_check(x86_Segment, 7);
 
+static const char
+*reg_seg_names[enum_count(x86_Segment)] =
+{
+	[SEG_NONE] = NULL,
+	[SEG_ES]   = "es",
+	[SEG_CS]   = "cs",
+	[SEG_SS]   = "ss",
+	[SEG_DS]   = "ds",
+	[SEG_FS]   = "fs",
+	[SEG_GS]   = "gs",
+};
+
 typedef enum x86_Scale
 {
 	SCALE_BYTE,
@@ -145,12 +202,22 @@ typedef enum x86_Scale
 x86_Scale;
 enum_check(x86_Scale, 4);
 
+// static const char
+// *scale_prefixes[enum_count(x86_Scale)] =
+// {
+// 	[SCALE_BYTE]  = "BYTE",
+// 	[SCALE_WORD]  = "WORD",
+// 	[SCALE_DWORD] = "DWORD",
+// 	[SCALE_QWORD] = "QWORD",
+// };
+
 // TODO:
 // needs const char *mnemonics
 typedef enum x86_Mnemonic
 {
 	MNEMO_INVALID,
 	MNEMO_NOP,
+	MNEMO_INT3,
 	MNEMO_ENDBR32,
 	MNEMO_ENDBR64,
 	MNEMO_ADD,
@@ -312,8 +379,36 @@ typedef enum x86_Mnemonic
 	MNEMO_VMOVSS,
 	MNEMO_VMOVSD,
 
+	MNEMO_VMOVLPS,
+	MNEMO_VMOVLPD,
+
+	MNEMO_VMOVDQA,
+	MNEMO_VMOVDQU,
+
 	MNEMO_VXORPS,
 	MNEMO_VXORPD,
+
+	MNEMO_VADDPS,
+	MNEMO_VADDPD,
+	MNEMO_VADDSS,
+	MNEMO_VADDSD,
+
+	MNEMO_VCVTPS2PD,
+	MNEMO_VCVTPD2PS,
+	MNEMO_VCVTSS2SD,
+	MNEMO_VCVTSD2SS,
+
+	MNEMO_VSUBPS,
+	MNEMO_VSUBPD,
+	MNEMO_VSUBSS,
+	MNEMO_VSUBSD,
+
+	MNEMO_VMULPS,
+	MNEMO_VMULPD,
+	MNEMO_VMULSS,
+	MNEMO_VMULSD,
+
+	MNEMO_VPEXTRW,
 
 	MNEMO_ANDN,
 
@@ -324,13 +419,14 @@ typedef enum x86_Mnemonic
 	enum_count(x86_Mnemonic),
 }
 x86_Mnemonic;
-enum_check(x86_Mnemonic, 159);
+enum_check(x86_Mnemonic, 181);
 
 static const char
 *x86_mnemonics[enum_count(x86_Mnemonic)] =
 {
 	[MNEMO_INVALID]   = "invalid",
 	[MNEMO_NOP]       = "nop",
+	[MNEMO_INT3]      = "int3",
 	[MNEMO_ENDBR32]   = "endbr32",
 	[MNEMO_ENDBR64]   = "endbr64",
 	[MNEMO_ADD]       = "add",
@@ -472,8 +568,31 @@ static const char
 	[MNEMO_VMOVUPD]    = "vmovupd",
 	[MNEMO_VMOVSS]     = "vmovss",
 	[MNEMO_VMOVSD]     = "vmovsd",
+	[MNEMO_VMOVLPS]    = "vmovlps",
+	[MNEMO_VMOVLPD]    = "vmovlpd",
+
+	[MNEMO_VMOVDQA]    = "vmovdqa",
+	[MNEMO_VMOVDQU]    = "vmovdqu",
+
 	[MNEMO_VXORPS]     = "vxorps",
 	[MNEMO_VXORPD]     = "vxorpd",
+	[MNEMO_VADDPS]     = "vaddps",
+	[MNEMO_VADDPD]     = "vaddpd",
+	[MNEMO_VADDSS]     = "vaddss",
+	[MNEMO_VADDSD]     = "vaddsd",
+	[MNEMO_VCVTPS2PD]  = "vcvtps2pd",
+	[MNEMO_VCVTPD2PS]  = "vcvtpd2ps",
+	[MNEMO_VCVTSS2SD]  = "vcvtss2sd",
+	[MNEMO_VCVTSD2SS]  = "vcvtsd2ss",
+	[MNEMO_VSUBPS]     = "vsubps",
+	[MNEMO_VSUBPD]     = "vsubpd",
+	[MNEMO_VSUBSS]     = "vsubss",
+	[MNEMO_VSUBSD]     = "vsubsd",
+	[MNEMO_VMULPS]     = "vmulps",
+	[MNEMO_VMULPD]     = "vmulpd",
+	[MNEMO_VMULSS]     = "vmulss",
+	[MNEMO_VMULSD]     = "vmulsd",
+	[MNEMO_VPEXTRW]    = "vpextrw",
 	[MNEMO_ANDN]	   = "andn",
 	[MNEMO_BEXTR]      = "bextr",
 	[MNEMO_SHLX]       = "shlx",

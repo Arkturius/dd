@@ -59,9 +59,17 @@ decoder_skip(Decoder *dp)
 
 	u8	b = decoder_get(dp);
 
-	if (dp->opcode.len < sizeof(dp->opcode.raw))
-		dp->opcode.raw[dp->opcode.len++] = b;
 	decoder_advance(dp);
+	return b;
+}
+
+INTERN u8
+decoder_opcode_skip(Decoder *dp)
+{
+	u8	b = decoder_skip(dp);
+
+	if (b && dp->opcode.len < sizeof(dp->opcode.raw))
+		dp->opcode.raw[dp->opcode.len++] = b;
 	return b;
 }
 
@@ -236,7 +244,7 @@ INTERN const OpcodeMeta
 	switch (meta->kind)
 	{
 		case META_TABLE:
-			idx = decoder_skip(dp);
+			idx = decoder_opcode_skip(dp);
 			break ;
 		case META_SPLIT_MOD:
 			decoder_ensure_modrm(dp);
@@ -366,14 +374,9 @@ resolve_ext_L(const DecodeExtension ex)
 }
 
 INTERN x86_Size
-resolve_operand_size
-(
-	Decoder           *dp,
-	DecodeOperandType type,
-	const OpcodeMeta  *meta
-)
+resolve_operand_size (Decoder *dp, DecodeOperandType type)
 {
-	const OpcodeFlags		of = meta->flags;
+	const OpcodeFlags		of = dp->opflags;
 	const DecodeExtension	ex = dp->extension;
 	const DecodePrefixState	ps = dp->prefix;
 
@@ -417,8 +420,8 @@ resolve_operand_size
 			assert(resolve_ext_L(ex) < 3);
 			return SZ_XMMWORD + resolve_ext_L(ex);
 		case OPTYPE_X:
-			if (resolve_ext_W(ex))
-				return SZ_YMMWORD;
+			assert(resolve_ext_L(ex) < 2);
+			return SZ_XMMWORD + resolve_ext_L(ex);
 			FALLTHROUGH;
 		case OPTYPE_DQ:
 			return SZ_XMMWORD;
@@ -429,6 +432,13 @@ resolve_operand_size
 	}
 	TODO("Handle DecodeOperandType(%d)", type);
 	return SZ_DWORD;
+}
+
+INTERN void
+decode_immediate(Decoder *dp, u8 n)
+{
+	dp->imm.size = n;
+	dp->imm.imm  = decode_inline_value(dp, n);
 }
 
 INTERN void
@@ -447,13 +457,13 @@ resolve_operand_method
 		case METHOD_A:  UNREACHABLE(); // TODO: #UD
 		case METHOD_I:  FALLTHROUGH;
 		case METHOD_J:
-			decode_inline_value(dp, sz);
+			decode_immediate(dp, sz);
 			break ;
 		case METHOD_O:
-			decode_inline_value(dp, ps.addrsize ? 4 : 8);
+			decode_immediate(dp, ps.addrsize ? 4 : 8);
 			break ;
 		case METHOD_L:
-			decode_inline_value(dp, 1);
+			decode_immediate(dp, 1);
 			break ;
 		default:
 			decoder_ensure_modrm(dp);
@@ -476,13 +486,14 @@ decode_opcode(Decoder *dp)
 			INFO("Opcode byte: %02x", dp->opcode.raw[i]);
 		TODO("Handle Byte(%02xh)", decoder_opcode_last(dp));
 	}
+	dp->opflags = meta.flags;
 	for (u32 i = 0; i < dp->nops; ++i)
 	{
 		OpcodeOperand	op = dp->ops[i];
 		x86_Size		sz = 0;
 
 		if (op.method != METHOD_FX)
-			sz = resolve_operand_size(dp, op.type, &meta);
+			sz = resolve_operand_size(dp, op.type);
 		resolve_operand_method(dp, op.method, 1 << sz);
 	}
 	return true;
@@ -498,10 +509,274 @@ decode_instruction(Decoder *dp)
 }
 
 INTERN void
+materialize_mnemonic(Decoder *dp, x86_Instruction *ins)
+{
+	ins->mnemo = dp->mnemonic;
+}
+
+INTERN void
+materialize_operand_fixed(Decoder *dp, x86_Operand *op, DecodeOperandFixed fx)
+{
+	TODO("");
+	UNUSED(dp);
+	UNUSED(op);
+
+	switch (fx)
+	{
+		case FX_1:
+		{
+			op->kind   = OPKIND_IMMEDIATE;
+			op->as.imm = 1;
+			op->size   = SZ_BYTE;
+		} break ;
+		case FX_3:
+		case FX_AL:
+		case FX_AH:
+		case FX_AX:
+		case FX_CL:
+		case FX_DX:
+		case FX_CS:
+		case FX_DS:
+		case FX_FS:
+		case FX_GS:
+		case FX_SS:
+		case FX_rAX:
+		case FX_rDX:
+		case FX_rCX:
+		case FX_ST0:
+		case FX_ST1:
+		default:
+			TODO("");
+	}
+}
+
+INTERN void
+materialize_memory(Decoder *dp, x86_Operand *op)
+{
+	op->kind = OPKIND_MEMORY;
+	op->as.mem = (x86_Memory)
+	{
+		.base.size  = SZ_QWORD,
+		.index.size = SZ_QWORD,
+		.scale      = SCALE_BYTE,
+		.disp       = dp->disp.size ? dp->disp.disp : 0,
+	};
+	if (dp->modrm.mod != 0b11 && dp->modrm.rm == 0b100)
+	{
+		op->as.mem.base.id  = dp->sib.base | (resolve_ext_B(dp->extension) << 3);
+		op->as.mem.base.c   = REG_CLASS_GPR;
+
+		op->as.mem.index.id = dp->sib.index;
+		op->as.mem.index.c  = REG_CLASS_GPR;
+
+		op->as.mem.scale    = dp->sib.scale;
+
+		if (dp->sib.base == 0b101 && dp->modrm.mod == 0b00)
+			op->as.mem.base = (x86_Register){0};
+		if (dp->sib.index == 0b100)
+			op->as.mem.index = (x86_Register){0};
+	}
+	else if (dp->modrm.mod == 0b00 && dp->modrm.rm == 0b101)
+	{
+		op->as.mem.base.id = REG_ID_0;
+		op->as.mem.base.c  = REG_CLASS_RIP;
+		op->as.mem.index = (x86_Register){0};
+	}
+	else
+	{
+		op->as.mem.base.id = dp->modrm.rm | (resolve_ext_B(dp->extension) << 3);
+		op->as.mem.base.c  = REG_CLASS_GPR;
+		op->as.mem.index = (x86_Register){0};
+	}
+}
+
+INTERN void
+materialize_gpr(Decoder *dp, x86_Operand *op, x86_RegisterId id, u8 ext_bit)
+{
+	op->kind        = OPKIND_REGISTER;
+	op->as.reg.c    = REG_CLASS_GPR;
+	op->as.reg.id   = id | (ext_bit << 3);
+	op->as.reg.size = op->size;
+	op->as.reg.hi8  = (op->size == SZ_BYTE)
+					  && (id >= 4 && id <= 7)
+	                  && (dp->extension.raw[0] == 0);
+}
+
+INTERN void
+materialize_operand_typed(Decoder *dp, x86_Operand *op, DecodeAddressingMethod method)
+{
+	switch (method)
+	{
+		case METHOD_OP:
+		{
+			x86_RegisterId	id = (decoder_opcode_last(dp) & 0b111);
+			u8				ex = resolve_ext_B(dp->extension);
+
+			materialize_gpr(dp, op, id, ex);
+		} break ;
+
+		case METHOD_E:
+		{
+			if (dp->modrm.mod == 0b11)
+			{
+				x86_RegisterId	id = dp->modrm.rm;
+				u8				ex = resolve_ext_B(dp->extension);
+
+				materialize_gpr(dp, op, id, ex);
+			}
+			else
+				materialize_memory(dp, op);
+		} break ;
+		case METHOD_G:
+		{
+			x86_RegisterId	id = dp->modrm.reg;
+			u8				ex = resolve_ext_R(dp->extension);
+
+			materialize_gpr(dp, op, id, ex);
+		} break ;
+		case METHOD_M:
+		{
+			materialize_memory(dp, op);
+		} break ;
+		case METHOD_I: 
+			FALLTHROUGH;
+		case METHOD_J:
+			FALLTHROUGH;
+		case METHOD_O:
+		{
+			op->kind   = OPKIND_IMMEDIATE;
+			op->as.imm = dp->imm.imm; // TODO: 20260925-132609
+		} break ;
+		default:
+			TODO("operand method [%d]", method);
+	}
+}
+
+INTERN void
+materialize_operand(Decoder *dp, x86_Operand *op, OpcodeOperand raw)
+{
+	op->size = resolve_operand_size(dp, raw.type);
+	if (raw.method == METHOD_FX)
+		materialize_operand_fixed(dp, op, raw.fixed);
+	else
+		materialize_operand_typed(dp, op, raw.method);
+}
+
+INTERN void
 decoder_materialize(Decoder *dp, x86_Instruction *ins)
 {
-	UNUSED(dp);
-	UNUSED(ins);
+	materialize_mnemonic(dp, ins);
+
+	for (u32 i = 0; i < dp->nops; ++i)
+	{
+		OpcodeOperand	raw_op = dp->ops[i];
+
+		materialize_operand(dp, &ins->ops[i], raw_op);
+		if (ins->ops[i].kind == OPKIND_REGISTER)
+			dp->flags |= DECODER_HAS_REG_OP;
+	}
+}
+
+INTERN void
+print_immediate(Buffer *out, x86_Immediate imm, x86_Size size)
+{
+	UNUSED(size);
+	buf_appendf(out, "0x%lx", (i64)imm);
+}
+
+INTERN void
+print_register_gpr(Buffer *out, x86_Register reg, x86_Size size)
+{
+	if (reg.hi8)
+	{
+		assert(reg.id >= 4 && reg.id <= 7);
+		buf_appendf(out, "%s", reg_gpr_names_hi8[reg.id - 4]);
+		return ;
+	}
+	assert(reg.size <= SZ_QWORD);
+	buf_appendf(out, "%s", reg_gpr_names[reg.id][size]);
+}
+
+INTERN void
+print_register_seg(Buffer *out, x86_Register reg)
+{
+	buf_appendf(out, "%s", reg_seg_names[reg.id]);
+}
+
+INTERN void
+print_register(Buffer *out, x86_Register reg, x86_Size size)
+{
+	switch (reg.c)
+	{
+		case REG_CLASS_GPR: print_register_gpr(out, reg, size); break ;
+		case REG_CLASS_SEG: print_register_seg(out, reg);       break ;
+		case REG_CLASS_RIP: buf_append(out, "rip");			    break ;
+		case REG_CLASS_FLG:
+		case REG_CLASS_X87:
+		case REG_CLASS_MMX:
+		case REG_CLASS_VEC:
+		case REG_CLASS_MSK:
+		case REG_CLASS_BND:
+		case REG_CLASS_CTL:
+		case REG_CLASS_DBG:
+		case REG_CLASS_SYS:
+		default:
+			TODO("print register class %d", reg.c);
+	}
+}
+
+INTERN void
+print_memory(Buffer *out, x86_Memory mem, x86_Size size)
+{
+	buf_appendf(out, "%s PTR ", reg_size_prefixes[size]);
+	buf_appendf(out, "[");
+
+	if (mem.base.size)
+	{
+		print_register(out, mem.base, SZ_QWORD);
+		if (mem.index.size)
+			buf_appendf(out, " + ");
+	}
+	if (mem.index.size)
+	{
+		print_register(out, mem.index, SZ_QWORD);
+		if (mem.scale > SCALE_BYTE)
+			buf_appendf(out, " * %d", 1 << mem.scale);
+	}
+	if (mem.disp > 0)
+	{
+		buf_append(out, " + ");
+		print_immediate(out, mem.disp, 0);
+	}
+	if (mem.disp < 0)
+	{
+		buf_append(out, " - ");
+		print_immediate(out, -mem.disp, 0);
+	}
+	buf_appendf(out, "]");
+}
+
+INTERN void
+print_operand(x86_Operand op)
+{
+	buf_with(out)
+	{
+		switch (op.kind)
+		{
+			case OPKIND_IMMEDIATE:
+				print_immediate(&out, op.as.imm, op.size);
+				break ;
+			case OPKIND_REGISTER:
+				print_register(&out, op.as.reg, op.size);
+				break ;
+			case OPKIND_MEMORY:
+				print_memory(&out, op.as.mem, op.size);
+				break ;
+			default:
+				UNREACHABLE();
+		}
+		buf_print(&out);
+	}	
 }
 
 INTERN bool
@@ -524,27 +799,31 @@ decoder_run(Decoder *dp, x86_Instructions *code)
 			u32 i = 0;
 
 			buf_appendf(&out, "%8x:       ", addr);
-			for (; i < dp->opcode.len && i < 7; ++i)
+			for (; i < dp->opcode.len && i < 15; ++i)
 				buf_appendf(&out, "%02x ", dp->opcode.raw[i]);
-			buf_appendf(&out, "%*.s    ", 3 * (7 - i), " ");
-			buf_appendf(&out, "%s", x86_mnemonics[dp->mnemonic]);
-			if (i < dp->opcode.len)
-			{
-				addr += i;
-				buf_appendf(&out, "\n%8x:       ", addr);
-				for (; i < dp->opcode.len; ++i)
-					buf_appendf(&out, "%02x ", dp->opcode.raw[i]);
-				buf_appendf(&out, "%.*s", 3 * (14 - i), " ");
-			}
-			buf_append(&out, "\n");
+			buf_appendf(&out, "%*.s    %s    ", 3 * (15 - i), " ", x86_mnemonics[dp->mnemonic]);
 			buf_print(&out);
 		}
+
+		if (dp->mnemonic == MNEMO_RET)
+			printf("\n");
 
 //  		INFO("< %s >", x86_mnemonics[dp->mnemonic]);
 // 		INFO(" %zu / %zu bytes", dp->pc - dp->start, dp->end - dp->start);
 // 		hexdump(dp->opcode.raw, dp->opcode.len);
 
+//		BREAKPOINT;
 		decoder_materialize(dp, &ins);
+
+		for(u32 i = 0; i < 4 && ins.ops[i].kind != OPKIND_NONE; ++i)
+		{
+			x86_Operand	op = ins.ops[i];
+
+			if (i)
+				printf(", ");
+			print_operand(op);
+		}
+		printf("\n");
 		decoder_clear(dp);
 
 		array_push(code, ins);
